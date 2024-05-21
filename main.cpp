@@ -108,7 +108,25 @@ IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, ID
 	shaderResult->Release();
 	return shaderBlob;
 }
-
+//Resource関数
+ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes) 
+{
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	D3D12_RESOURCE_DESC vertexResourceDesc{};
+	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	vertexResourceDesc.Width = sizeInBytes;
+	vertexResourceDesc.Height = 1;
+	vertexResourceDesc.DepthOrArraySize = 1;
+	vertexResourceDesc.MipLevels = 1;
+	vertexResourceDesc.SampleDesc.Count = 1;
+	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	ID3D12Resource* vertexResource = nullptr;
+    HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	assert(SUCCEEDED(hr));
+	return vertexResource;
+}
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 
 	WNDCLASS wc{};
@@ -148,6 +166,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debugController->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif
+#pragma region
 	IDXGIFactory7* dxgiFactory = nullptr;
 
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
@@ -298,6 +317,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
 	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[0].Descriptor.ShaderRegister = 0;
+	desriptionRootSignature.pParameters = rootParameters;
+	desriptionRootSignature.NumParameters = _countof(rootParameters);
 	ID3DBlob* signatureBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 	hr = D3D12SerializeRootSignature(&desriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -347,20 +372,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//頂点リソース作成
 #pragma region
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexResourceDesc.Width = sizeof(Vector4) * 3;
-	vertexResourceDesc.Height = 1;
-	vertexResourceDesc.DepthOrArraySize = 1;
-	vertexResourceDesc.MipLevels = 1;
-	vertexResourceDesc.SampleDesc.Count = 1;
-	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	ID3D12Resource* vertexResource = nullptr;
-	hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
-	assert(SUCCEEDED(hr));
+	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(Vector4) * 3);
 #pragma endregion
 	//頂点バッファビューを作成
 #pragma region
@@ -376,6 +388,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexData[0] = { -0.5f,-0.5f,0.0f,1.0f };
 	vertexData[1] = { 0.0f,0.5f,0.0f,1.0f };
 	vertexData[2] = { 0.5f,-0.5f,0.0f,1.0f };
+	//マテリアルリソース
+	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Vector4));
+	Vector4* materialData = nullptr;
+	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+
 #pragma endregion
 	//Scissorとビューポート
 #pragma region
@@ -424,6 +442,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetPipelineState(graphicsPipelineState);
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//三角形の色変更
+			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->DrawInstanced(3, 1, 0, 0);
 			//リソースバリアを張る
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -470,6 +490,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootSignature->Release();
 	pixelShaderBlod->Release();
 	vertexShaderBlob->Release();
+	materialResource->Release();
 #ifndef _DEBUG
 	debugController->Release();
 #endif _DEBUG
