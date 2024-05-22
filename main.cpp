@@ -7,17 +7,22 @@
 #include<format>
 #include<dxgidebug.h>
 #include<dxcapi.h>
+#include"externals/imgui/imgui.h"
+#include"externals/imgui/imgui_impl_dx12.h"
+#include"externals/imgui/imgui_impl_win32.h"
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 struct Matrix4x4
 {
 	float m[4][4];
 };
 
-struct Vector4
+struct Vector4 
 {
 	float x;
 	float y;
@@ -29,7 +34,6 @@ struct Vector3
 	float x;
 	float y;
 	float z;
-	
 };
 //単位行列
 Matrix4x4 MakeIdentity4x4() {
@@ -266,7 +270,9 @@ TransformS transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 TransformS cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 //ウィンドウ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+		return true;
+	}
 	switch (msg)
 	{
 
@@ -372,6 +378,18 @@ ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes)
 	assert(SUCCEEDED(hr));
 	return vertexResource;
 }
+//DescriptorHeap関数
+ID3D12DescriptorHeap* CreateDescrriptHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible)
+{
+	ID3D12DescriptorHeap* DescriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC DescriptorHeapDesc{};
+	DescriptorHeapDesc.Type = heapType;
+	DescriptorHeapDesc.NumDescriptors = numDescriptors;
+	DescriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr = device->CreateDescriptorHeap(&DescriptorHeapDesc, IID_PPV_ARGS(&DescriptorHeap));
+	assert(SUCCEEDED(hr));
+	return DescriptorHeap;
+}
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 
 	WNDCLASS wc{};
@@ -403,6 +421,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	);
 
 	ShowWindow(hwnd, SW_SHOW);
+#pragma endregion
 //デバッグレイヤー
 #ifdef _DEBUG
 	ID3D12Debug1* debugController = nullptr;
@@ -411,7 +430,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debugController->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif
-
+	//初期化　変数
 #pragma region
 	IDXGIFactory7* dxgiFactory = nullptr;
 
@@ -510,12 +529,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//ディスクリプタヒープの生成
 #pragma region
-	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvDescriptorHeapDesc.NumDescriptors = 2;
-	hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
-	assert(SUCCEEDED(hr));
+	ID3D12DescriptorHeap* rtvDescriptoHeap = CreateDescrriptHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	ID3D12DescriptorHeap* srvDescriptoHeap = CreateDescrriptHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 #pragma endregion
 	//Resourceを引っ張ってくる
 #pragma region
@@ -530,7 +545,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptoHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
 	rtvHandles[0] = rtvStartHandle;
 	device->CreateRenderTargetView(swapChainResources[0], &rtvDesc, rtvHandles[0]);
@@ -664,7 +679,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.top = 0;
 	scissorRect.bottom = kClientHeight;
 #pragma endregion
-
+	//デバッグ画面初期化
+#pragma region
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX12_Init(device, swapChainDesc.BufferCount, rtvDesc.Format,
+		srvDescriptoHeap, srvDescriptoHeap->GetCPUDescriptorHandleForHeapStart(),
+		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());
+#pragma endregion
 	MSG msg{};
 	//ゲーム処理
 	while (msg.message != WM_QUIT)
@@ -674,6 +698,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			DispatchMessage(&msg);
 		}
 		else {
+			//imgui
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+			ImGui::ShowDemoWindow();
+
 			//三角形３次元化
 			transform.rotate.y += 0.03f;
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransfprm.scale, cameraTransfprm.rotate, cameraTransfprm.translate);
@@ -697,6 +727,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
 			float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
 			commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
+			//ImGuiの内部コマンド
+			ImGui::Render();
 			//三角形描画
 			commandList->RSSetViewports(1, &viewport);
 			commandList->RSSetScissorRects(1, &scissorRect);
@@ -708,6 +740,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->DrawInstanced(3, 1, 0, 0);
+			//imguiの描画
+			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptoHeap };
+			commandList->SetDescriptorHeaps(1, descriptorHeaps);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 			//リソースバリアを張る
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -734,9 +770,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//解放
 	CloseHandle(fenceEvent);
 	fence->Release();
-	rtvDescriptorHeap->Release();
+	rtvDescriptoHeap->Release();
 	swapChainResources[0]->Release();
 	swapChainResources[1]->Release();
+	srvDescriptoHeap->Release();
 	swapChain->Release();
 	commandList->Release();
 	commandAllocator->Release();
@@ -755,6 +792,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexShaderBlob->Release();
 	materialResource->Release();
 	wvpResource->Release();
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 #ifndef _DEBUG
 	debugController->Release();
 #endif _DEBUG
