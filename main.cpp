@@ -798,6 +798,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui_ImplDX12_Init(device, swapChainDesc.BufferCount, rtvDesc.Format,
 		srvDescriptoHeap, srvDescriptoHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());
+	float materialDataVector[4] = { 1,0,0,1 };
+	float TransformScale[3] = { 1.0f,1.0f,1.0f };
+	float TransformRotae[3] = { 0.0f, 0.0f, 0.0f };
+	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
 #pragma endregion
 	MSG msg{};
 	//ゲーム処理
@@ -806,18 +810,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
 		}
 		else {
 			//imgui
-			Vector4 materialDataVector = {1,1,1,0};
-			//ImGui::Begin("Debug1");
-			//ImGui::InputFloat4("materialData", materialDataVector);
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			ImGui::ShowDemoWindow();
+			ImGui::InputFloat4("materialData", materialDataVector);
+			ImGui::InputFloat3("Scale", TransformScale);
+			ImGui::InputFloat3("Rotae", TransformRotae);
+			ImGui::InputFloat3("Translate", TransformTranslate);
+			*materialData = { materialDataVector[0],materialDataVector[1],materialDataVector[2],materialDataVector[3] };
+			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
+			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
+			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
 
-			*materialData = materialDataVector;
 
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
