@@ -920,14 +920,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pixelShaderBlod->Release();
 	vertexShaderBlob->Release();
 	materialResource->Release();
-
+	textureResource->Release();
 	wvpResource->Release();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 	CoUninitialize();
 #ifndef _DEBUG
-	debugController->Release();
+	//debugController->Release();
 #endif _DEBUG
 	CloseWindow(hwnd);
 	//警告
