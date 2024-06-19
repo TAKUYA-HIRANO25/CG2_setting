@@ -8,6 +8,8 @@
 #include<dxgidebug.h>
 #include<dxcapi.h>
 #include<vector>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "externals/DirectXTex/DirectXTex.h"
 #include"externals/imgui/imgui.h"
 #include"externals/imgui/imgui_impl_dx12.h"
@@ -50,6 +52,11 @@ struct Transform {
 	Vector3 scale;
 	Vector3 rotate;
 	Vector3 transform;
+};
+//球
+struct Sphere {
+	Vector3 center;
+	float radius;
 };
 //単位行列
 Matrix4x4 MakeIdentity4x4() {
@@ -287,6 +294,63 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 	result.m[3][2] = nearClip / (nearClip - farClip);
 	result.m[3][3] = 1.0f;
 	return result;
+}
+//球
+void DrawSphere(VertexData* vertexData ,uint32_t Subdivision){
+	const uint32_t kSubdivision = 16;
+	const float kLatEvery = float(M_PI) / float(kSubdivision);	//φd
+	const float kLonEvery = 2.0 * float(M_PI) / float(kSubdivision);	//Θd
+	float u;
+	float v;
+	Subdivision = int(kLatEvery) * int(kLonEvery) * 6;
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
+	{
+		float lat = -float(M_PI) / 2.0f + kLatEvery * latIndex; //φ
+
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+			float lon = lonIndex * kLonEvery;//Θ
+			u = float(lonIndex) / float(kSubdivision);
+			v = 1.0f - float(latIndex) / float(kSubdivision);
+
+			vertexData[start].position.x = cos(lat) * cos(lon);//左下
+			vertexData[start].position.y = sin(lat);
+			vertexData[start].position.z = cos(lat) * sin(lon);
+			vertexData[start].position.w = 1.0f;
+			vertexData[start].texcoord = { u,v };
+			
+			vertexData[start + 1].position.x = cos(kLatEvery + lat) * cos(lon);//上
+			vertexData[start + 1].position.y = sin(kLatEvery + lat);
+			vertexData[start + 1].position.z = cos(kLatEvery + lat) * sin(lon);
+			vertexData[start + 1].position.w = 1.0f;
+			vertexData[start + 1].texcoord = { u,v };
+
+			vertexData[start + 2].position.x = cos(lat) * cos(kLonEvery + lon);	//右下
+			vertexData[start + 2].position.y = sin(lat);
+			vertexData[start + 2].position.z = cos(lat) * sin(lon + kLonEvery);
+			vertexData[start + 2].position.w = 1.0f;
+			vertexData[start + 2].texcoord = { u,v };
+
+			vertexData[start + 3].position.x = cos(lat) * cos(kLonEvery + lon);//左下2
+			vertexData[start + 3].position.y = sin(lat);
+			vertexData[start + 3].position.z = cos(lat) * sin(lon + kLonEvery);
+			vertexData[start + 3].position.w = 1.0f;
+			vertexData[start + 3].texcoord = { u,v };
+
+			vertexData[start + 4].position.x = cos(kLatEvery + lat) * cos(lon);//上
+			vertexData[start + 4].position.y = sin(kLatEvery + lat);
+			vertexData[start + 4].position.z = cos(kLatEvery + lat) * sin(lon);
+			vertexData[start + 4].position.w = 1.0f;
+			vertexData[start + 4].texcoord = { u,v };
+
+			vertexData[start + 5].position.x = cos(lat) * cos(kLonEvery + lon);	//右下
+			vertexData[start + 5].position.y = sin(kLatEvery + lat);
+			vertexData[start + 5].position.z = cos(kLatEvery + lat) * sin(lon);
+			vertexData[start + 5].position.w = 1.0f;
+			vertexData[start + 5].texcoord = { u,v };
+
+		}
+	}
 }
 //Transform
 struct TransformS {
@@ -711,8 +775,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	texturSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	texturSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	device->CreateShaderResourceView(textureResource, &srvDesc, texturSrvHandleCPU);
-
-
 #pragma endregion
 	//DXCの初期化
 #pragma region
@@ -818,18 +880,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	VertexData* vertexData = nullptr;
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };//左下
+	vertexData[0].position = {-0.5f,-0.5f,0.0f,1.0f};//左下
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };//上
 	vertexData[1].texcoord = { 0.5f,0.0f };
 	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };//右下
 	vertexData[2].texcoord = { 1.0f,1.0f };
+
 	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };//左下２
 	vertexData[3].texcoord = { 0.0f,1.0f };
 	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };//上２
 	vertexData[4].texcoord = { 0.5f,0.0f };
 	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };//右下２
 	vertexData[5].texcoord = { 1.0f,1.0f };
+	
 	//マテリアルリソース
 	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Vector4));
 	Vector4* materialData = nullptr;
@@ -874,6 +938,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 	Matrix4x4 worldViewProjectionMatrixSorite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 	*transformationMatrixDataSprite = worldViewProjectionMatrixSorite;
+
+#pragma endregion
+	//スフィア用リソース
+#pragma region
+	ID3D12Resource* vertexResourceSphere = CreatBufferResource(device, sizeof(VertexData) * 16 * 16 * 6);
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
+	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * 16 * 16 * 6;
+	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+	//頂点データ
+	VertexData* vertexDataSphere = nullptr;
+	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+	uint32_t Subdivision = 0;
+	DrawSphere(vertexDataSphere, Subdivision);
+	//Transform
+	ID3D12Resource* transformationMatrixResourceSphere = CreatBufferResource(device, sizeof(Matrix4x4));
+	Matrix4x4* transformationMatrixDataSphere = nullptr;
+	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
+	*transformationMatrixDataSphere = MakeIdentity4x4();
+	//CPU用Transform
+	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
+	//WVPスプライト用
+	Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
+	Matrix4x4 viewMatrixSphere = MakeIdentity4x4();
+	Matrix4x4 projectionMatrixSphere = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
+	*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
 
 
 #pragma endregion
@@ -993,6 +1084,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 			//ImGuiの内部コマンド
+			// 
 			//三角形描画
 			commandList->RSSetViewports(1, &viewport);
 			commandList->RSSetScissorRects(1, &scissorRect);
@@ -1004,12 +1096,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			commandList->DrawInstanced(6, 1, 0, 0);
+			//commandList->DrawInstanced(6, 1, 0, 0);
+
+			//スフィア描画
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
+			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
+
 
 			//スプライト描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawInstanced(Subdivision, 1, 0, 0);
+
+
+
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 			//リソースバリアを張る
@@ -1066,6 +1167,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	dsvDescriptorHeap->Release();
 	vertexResourceSprite->Release();
 	transformationMatrixResourceSprite->Release();
+	vertexResourceSphere->Release();
+	transformationMatrixResourceSphere->Release();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
