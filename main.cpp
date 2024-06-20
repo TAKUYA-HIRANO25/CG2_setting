@@ -296,58 +296,71 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 	return result;
 }
 //球
-void DrawSphere(VertexData* vertexData ,uint32_t Subdivision){
+void DrawSphere(VertexData* vertexData){
 	const uint32_t kSubdivision = 16;
-	const float kLatEvery = float(M_PI) / float(kSubdivision);	//φd
-	const float kLonEvery = 2.0 * float(M_PI) / float(kSubdivision);	//Θd
+	const float kLonEvery = float(M_PI) / float(kSubdivision);	//φd  緯度　縦
+	const float kLatEvery = 2.0 * float(M_PI) / float(kSubdivision);  //Θd 　経度　横
 	float u;
 	float v;
-	Subdivision = int(kLatEvery) * int(kLonEvery) * 6;
+
 	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
 	{
-		float lat = -float(M_PI) / 2.0f + kLatEvery * latIndex; //φ
+		float lat = -float(M_PI) / 2.0f + kLatEvery * latIndex; //φ  
 
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
 			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-			float lon = lonIndex * kLonEvery;//Θ
+			float lon = lonIndex * kLonEvery;//Θ  
 			u = float(lonIndex) / float(kSubdivision);
 			v = 1.0f - float(latIndex) / float(kSubdivision);
 
-			vertexData[start].position.x = cos(lat) * cos(lon);//左下
-			vertexData[start].position.y = sin(lat);
-			vertexData[start].position.z = cos(lat) * sin(lon);
-			vertexData[start].position.w = 1.0f;
-			vertexData[start].texcoord = { u,v };
+			VertexData vertA = {
+				{
+					cos(lat) * cos(lon) ,
+					sin(lat),
+					cos(lat) * sin(lon),
+					1.0f
+				},
+				{ u,v },
+			};
+			VertexData vertB = {
+				{
+					cos(kLonEvery + lat) * cos(lon) ,
+					sin(kLonEvery + lat),
+					cos(kLonEvery + lat) * sin(lon),
+					1.0f
+				} ,
+				{ u,v },
+			};
+			VertexData vertC = {
+				{ 
+					cos(lat) * cos(kLatEvery + lon) ,
+					sin(lat),
+					cos(lat) * sin(lon + kLatEvery),
+					1.0f
+				},
+				{ u,v },
+			};
+			VertexData vertD = {
+				{
+					cos(kLonEvery + lat) * cos(kLatEvery + lon),
+					sin(kLonEvery + lat),
+					cos(kLonEvery + lat) * sin(kLatEvery + lon),
+					1.0f
+				},
+				{ u,v },
+			};
 			
-			vertexData[start + 1].position.x = cos(kLatEvery + lat) * cos(lon);//上
-			vertexData[start + 1].position.y = sin(kLatEvery + lat);
-			vertexData[start + 1].position.z = cos(kLatEvery + lat) * sin(lon);
-			vertexData[start + 1].position.w = 1.0f;
-			vertexData[start + 1].texcoord = { u,v };
+			vertexData[start + 0] = vertA;  //左下 A
 
-			vertexData[start + 2].position.x = cos(lat) * cos(kLonEvery + lon);	//右下
-			vertexData[start + 2].position.y = sin(lat);
-			vertexData[start + 2].position.z = cos(lat) * sin(lon + kLonEvery);
-			vertexData[start + 2].position.w = 1.0f;
-			vertexData[start + 2].texcoord = { u,v };
+			vertexData[start + 1] = vertB;  //上 B
 
-			vertexData[start + 3].position.x = cos(lat) * cos(kLonEvery + lon);//左下2
-			vertexData[start + 3].position.y = sin(lat);
-			vertexData[start + 3].position.z = cos(lat) * sin(lon + kLonEvery);
-			vertexData[start + 3].position.w = 1.0f;
-			vertexData[start + 3].texcoord = { u,v };
+			vertexData[start + 2] = vertC;  //右下 C
 
-			vertexData[start + 4].position.x = cos(kLatEvery + lat) * cos(lon);//上
-			vertexData[start + 4].position.y = sin(kLatEvery + lat);
-			vertexData[start + 4].position.z = cos(kLatEvery + lat) * sin(lon);
-			vertexData[start + 4].position.w = 1.0f;
-			vertexData[start + 4].texcoord = { u,v };
+			vertexData[start + 3] = vertC;  //左下2 C
 
-			vertexData[start + 5].position.x = cos(lat) * cos(kLonEvery + lon);	//右下
-			vertexData[start + 5].position.y = sin(kLatEvery + lat);
-			vertexData[start + 5].position.z = cos(kLatEvery + lat) * sin(lon);
-			vertexData[start + 5].position.w = 1.0f;
-			vertexData[start + 5].texcoord = { u,v };
+			vertexData[start + 4] = vertB;  //上2 B
+
+			vertexData[start + 5] = vertD;  //右下2 D
 
 		}
 	}
@@ -943,28 +956,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//スフィア用リソース
 #pragma region
 	ID3D12Resource* vertexResourceSphere = CreatBufferResource(device, sizeof(VertexData) * 16 * 16 * 6);
+	ID3D12Resource* wvpResourceSphere = CreatBufferResource(device, sizeof(Matrix4x4));
+	Matrix4x4* wvpDataSphere = nullptr;
+	wvpResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&wvpDataSphere));
+	*wvpDataSphere = MakeIdentity4x4();
+	//頂点バッファビューを作成
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
 	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * 16 * 16 * 6;
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
-	//頂点データ
+	//頂点リソースに書き込み
 	VertexData* vertexDataSphere = nullptr;
-	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
-	uint32_t Subdivision = 0;
-	DrawSphere(vertexDataSphere, Subdivision);
+	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+	DrawSphere(vertexDataSphere);
 	//Transform
 	ID3D12Resource* transformationMatrixResourceSphere = CreatBufferResource(device, sizeof(Matrix4x4));
 	Matrix4x4* transformationMatrixDataSphere = nullptr;
 	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
 	*transformationMatrixDataSphere = MakeIdentity4x4();
-	//CPU用Transform
+	//スフィア用Transform
 	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
-	//WVPスプライト用
-	Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
-	Matrix4x4 viewMatrixSphere = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSphere = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
-	*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
 
 
 #pragma endregion
@@ -1044,7 +1055,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::InputFloat3("Scale", TransformScale);
 			ImGui::InputFloat3("Rotae", TransformRotae);
 			ImGui::InputFloat3("Translate", TransformTranslate);
-			TransformRotae[1] += 0.01f;
+			//TransformRotae[1] += 0.01f;
 			*materialData = { materialDataVector[0],materialDataVector[1],materialDataVector[2],materialDataVector[3] };
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -1059,6 +1070,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, (Multiply(viewMatrix, projectionMatrix)));
 			*wvpData = worldViewProjectionMatrix;
+
+			//球の３次元化 WVPスフィア用
+			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.transform);
+			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
+			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
+			*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
+			*wvpDataSphere = worldViewProjectionMatrix;
 
 			ImGui::Render();
 			//画面色変更
@@ -1107,7 +1126,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//スプライト描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			commandList->DrawInstanced(Subdivision, 1, 0, 0);
+			commandList->DrawInstanced(6, 1, 0, 0);
 
 
 
@@ -1162,6 +1181,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialResource->Release();
 	textureResource->Release();
 	wvpResource->Release();
+	wvpResourceSphere->Release();
 	intermediateResource->Release();
 	depthStencilResource->Release();
 	dsvDescriptorHeap->Release();
