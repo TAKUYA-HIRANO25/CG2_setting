@@ -319,8 +319,8 @@ void DrawSphere(VertexData* vertexData){
 					sin(lat),
 					cos(lat) * sin(lon),
 					1.0f
-				},
-				{ u,v },
+				},	
+				{  float(lonIndex) / float(kSubdivision), 1.0f - float(latIndex) / float(kSubdivision) },
 			};
 			VertexData vertB = {
 				{
@@ -329,7 +329,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(kLonEvery + lat) * sin(lon),
 					1.0f
 				} ,
-				{ u,v },
+				{  float(lonIndex) / float(kSubdivision), 1.0f - float(latIndex + 1) / float(kSubdivision) },
 			};
 			VertexData vertC = {
 				{ 
@@ -338,7 +338,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(lat) * sin(lon + kLatEvery),
 					1.0f
 				},
-				{ u,v },
+				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) },
 			};
 			VertexData vertD = {
 				{
@@ -347,7 +347,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(kLonEvery + lat) * sin(kLatEvery + lon),
 					1.0f
 				},
-				{ u,v },
+				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) },
 			};
 			
 			vertexData[start + 0] = vertA;  //左下 A
@@ -893,6 +893,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	VertexData* vertexData = nullptr;
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+
 	vertexData[0].position = {-0.5f,-0.5f,0.0f,1.0f};//左下
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };//上
@@ -906,7 +907,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexData[4].texcoord = { 0.5f,0.0f };
 	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };//右下２
 	vertexData[5].texcoord = { 1.0f,1.0f };
-	
 	//マテリアルリソース
 	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Vector4));
 	Vector4* materialData = nullptr;
@@ -975,8 +975,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
 	*transformationMatrixDataSphere = MakeIdentity4x4();
 	//スフィア用Transform
-	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
-
+	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,10.0f } };
+	
 
 #pragma endregion
 	//DSVの設定
@@ -1076,8 +1076,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
-			*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
-			*wvpDataSphere = worldViewProjectionMatrix;
+			*wvpDataSphere = worldViewProjectionMatrixSphere;
 
 			ImGui::Render();
 			//画面色変更
@@ -1115,11 +1114,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			//commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
 
 			//スフィア描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
-			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+		    commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
 			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
 
 
