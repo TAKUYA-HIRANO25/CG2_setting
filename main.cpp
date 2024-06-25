@@ -975,7 +975,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
 	*transformationMatrixDataSphere = MakeIdentity4x4();
 	//スフィア用Transform
-	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,10.0f } };
+	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
 	
 
 #pragma endregion
@@ -1076,7 +1076,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
-			*wvpDataSphere = worldViewProjectionMatrixSphere;
+			*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
 
 			ImGui::Render();
 			//画面色変更
@@ -1114,7 +1114,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
+			//commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
 
 			//スフィア描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
