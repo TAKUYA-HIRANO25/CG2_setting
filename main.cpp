@@ -298,21 +298,19 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 //球
 void DrawSphere(VertexData* vertexData){
 	const uint32_t kSubdivision = 16;
-	const float kLonEvery = float(M_PI) / float(kSubdivision);	//φd  緯度　縦
-	const float kLatEvery = 2.0 * float(M_PI) / float(kSubdivision);  //Θd 　経度　横
+	const float kLonEvery = float(M_PI) * 2.0f / float(kSubdivision);//経度 φ
+	const float kLatEvery = float(M_PI) / float(kSubdivision);	//緯度 θ
 	float u;
 	float v;
-
-	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
-	{
-		float lat = -float(M_PI) / 2.0f + kLatEvery * latIndex; //φ  
-
+	//緯度の方向に分割
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+		float lat = float(M_PI) / 2.0f + kLatEvery * latIndex;//θ
+		//経度の方向に分割しながら線を描く
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
-			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-			float lon = lonIndex * kLonEvery;//Θ  
+			float lon = lonIndex * kLonEvery;//φ
 			u = float(lonIndex) / float(kSubdivision);
 			v = 1.0f - float(latIndex) / float(kSubdivision);
-
+			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
 			VertexData vertA = {
 				{
 					cos(lat) * cos(lon) ,
@@ -324,33 +322,33 @@ void DrawSphere(VertexData* vertexData){
 			};
 			VertexData vertB = {
 				{
-					cos(kLonEvery + lat) * cos(lon) ,
-					sin(kLonEvery + lat),
-					cos(kLonEvery + lat) * sin(lon),
+					cos(lat + kLatEvery) * cos(lon) ,
+					sin(lat + kLatEvery),
+					cos(lat + kLatEvery) * sin(lon),
 					1.0f
 				} ,
 				{  float(lonIndex) / float(kSubdivision), 1.0f - float(latIndex + 1) / float(kSubdivision) },
 			};
 			VertexData vertC = {
 				{ 
-					cos(lat) * cos(kLatEvery + lon) ,
+					cos(lat) * cos(lon + kLonEvery) ,
 					sin(lat),
-					cos(lat) * sin(lon + kLatEvery),
+					cos(lat) * sin(lon + kLonEvery),
 					1.0f
 				},
 				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) },
 			};
 			VertexData vertD = {
 				{
-					cos(kLonEvery + lat) * cos(kLatEvery + lon),
-					sin(kLonEvery + lat),
-					cos(kLonEvery + lat) * sin(kLatEvery + lon),
+					cos(lat + kLatEvery) * cos(lon + kLonEvery),
+					sin(lat + kLatEvery),
+					cos(lat + kLatEvery) * sin(lon + kLonEvery),
 					1.0f
 				},
 				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) },
 			};
 			
-			vertexData[start + 0] = vertA;  //左下 A
+			vertexData[start + 0] = vertD;  //左下 A
 
 			vertexData[start + 1] = vertB;  //上 B
 
@@ -360,7 +358,7 @@ void DrawSphere(VertexData* vertexData){
 
 			vertexData[start + 4] = vertB;  //上2 B
 
-			vertexData[start + 5] = vertD;  //右下2 D
+			vertexData[start + 5] = vertA;  //右下2 D
 
 		}
 	}
@@ -1072,6 +1070,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			*wvpData = worldViewProjectionMatrix;
 
 			//球の３次元化 WVPスフィア用
+			transformSphere.rotate.y += 0.03f;
 			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.transform);
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
@@ -1114,7 +1113,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			//commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
+			//commandList->DrawInstanced(6, 1, 0, 0);
 
 			//スフィア描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
