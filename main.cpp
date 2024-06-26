@@ -300,16 +300,14 @@ void DrawSphere(VertexData* vertexData){
 	const uint32_t kSubdivision = 16;
 	const float kLonEvery = float(M_PI) * 2.0f / float(kSubdivision);//経度 φ
 	const float kLatEvery = float(M_PI) / float(kSubdivision);	//緯度 θ
-	float u;
-	float v;
-	//緯度の方向に分割
+
+
 	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
 		float lat = float(M_PI) / 2.0f + kLatEvery * latIndex;//θ
-		//経度の方向に分割しながら線を描く
+
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
 			float lon = lonIndex * kLonEvery;//φ
-			u = float(lonIndex) / float(kSubdivision);
-			v = 1.0f - float(latIndex) / float(kSubdivision);
+			
 			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
 			VertexData vertA = {
 				{
@@ -318,7 +316,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(lat) * sin(lon),
 					1.0f
 				},	
-				{  float(lonIndex) / float(kSubdivision), 1.0f - float(latIndex) / float(kSubdivision) },
+				{ float(lonIndex) / float(kSubdivision), 1.0f + float(latIndex) / float(kSubdivision) },
 			};
 			VertexData vertB = {
 				{
@@ -327,7 +325,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(lat + kLatEvery) * sin(lon),
 					1.0f
 				} ,
-				{  float(lonIndex) / float(kSubdivision), 1.0f - float(latIndex + 1) / float(kSubdivision) },
+				{ float(lonIndex) / float(kSubdivision), 1.0f + float(latIndex + 1) / float(kSubdivision) },
 			};
 			VertexData vertC = {
 				{ 
@@ -336,7 +334,7 @@ void DrawSphere(VertexData* vertexData){
 					cos(lat) * sin(lon + kLonEvery),
 					1.0f
 				},
-				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) },
+				{ float(lonIndex + 1) / float(kSubdivision), 1.0f + float(latIndex) / float(kSubdivision) },
 			};
 			VertexData vertD = {
 				{
@@ -345,20 +343,20 @@ void DrawSphere(VertexData* vertexData){
 					cos(lat + kLatEvery) * sin(lon + kLonEvery),
 					1.0f
 				},
-				{  float((lonIndex + 1) % kSubdivision ) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) },
+				{ float(lonIndex + 1) / float(kSubdivision), 1.0f + float(latIndex + 1) / float(kSubdivision) } ,
 			};
 			
-			vertexData[start + 0] = vertD;  //左下 A
+			vertexData[start + 5] = vertA;  //左下 A
 
-			vertexData[start + 1] = vertB;  //上 B
+			vertexData[start + 4] = vertB;  //上 B
 
-			vertexData[start + 2] = vertC;  //右下 C
+			vertexData[start + 3] = vertC;  //右下 C
 
-			vertexData[start + 3] = vertC;  //左下2 C
+			vertexData[start + 2] = vertC;  //左下2 C
 
-			vertexData[start + 4] = vertB;  //上2 B
+			vertexData[start + 1] = vertB;  //上2 B
 
-			vertexData[start + 5] = vertA;  //右下2 D
+			vertexData[start + 0] = vertD;  //右下2 D
 
 		}
 	}
