@@ -47,12 +47,15 @@ struct VertexData
 {
 	Vector4 position;
 	Vector2 texcoord;
+	Vector3 normal;
+
 };
 struct Transform {
 	Vector3 scale;
 	Vector3 rotate;
 	Vector3 transform;
 };
+
 //球
 struct Sphere {
 	Vector3 center;
@@ -887,7 +890,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(),
 		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 	assert(SUCCEEDED(hr));
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2]= {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3]= {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -896,6 +899,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDescs[3].SemanticName = "NORMAL";
+	inputElementDescs[3].SemanticIndex = 0;
+	inputElementDescs[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDescs{};
 	inputLayoutDescs.pInputElementDescs = inputElementDescs;
 	inputLayoutDescs.NumElements = _countof(inputElementDescs);
@@ -965,10 +972,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
 	vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };//左下
 	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[0].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };//左上
 	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
+	vertexDataSprite[1].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };//右下
 	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
+	vertexDataSprite[2].normal = { 0.0f,0.0f,-1.0f };
 
 	vertexDataSprite[3].position = { 0.0f,0.0f,0.0f,1.0f };//左上
 	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
