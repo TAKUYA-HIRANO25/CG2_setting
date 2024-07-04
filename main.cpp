@@ -70,6 +70,7 @@ struct DirectiomalLight {
 	Vector3 direction;
 	float intensity;
 };
+
 //球
 struct Sphere {
 	Vector3 center;
@@ -397,6 +398,20 @@ void DrawSphere(VertexData* vertexData){
 
 		}
 	}
+}
+//ノーマライズ
+float Length(const Vector3& v) {
+	float result;
+	result = sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+	return result;
+}
+Vector3 Normalize(const Vector3& v) {
+	float length = Length(v);
+	Vector3 result;
+	result.x = v.x / length;
+	result.y = v.y / length;
+	result.z = v.z / length;
+	return result;
 }
 //Transform
 struct TransformS {
@@ -1187,6 +1202,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
 			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
+			directionalLightData->direction = Normalize(directionalLightData->direction);
 
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
@@ -1204,7 +1220,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
-
+			transformationMatrixDataSphere->World = worldMatrixSphere;
 			ImGui::Render();
 			//画面色変更
 #pragma region
