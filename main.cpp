@@ -55,7 +55,21 @@ struct Transform {
 	Vector3 rotate;
 	Vector3 transform;
 };
-
+struct Material
+{
+	Vector4 color;
+	int32_t enableLighting;
+};
+struct TransformationMatrix
+{
+	Matrix4x4 WVP;
+	Matrix4x4 World;
+};
+struct DirectiomalLight {
+	Vector4 color;
+	Vector3 direction;
+	float intensity;
+};
 //球
 struct Sphere {
 	Vector3 center;
@@ -320,6 +334,11 @@ void DrawSphere(VertexData* vertexData){
 					1.0f
 				},	
 				{ float(lonIndex) / float(kSubdivision), 1.0f + float(latIndex) / float(kSubdivision) },
+				{
+					cos(lat) * cos(lon) ,
+					sin(lat),
+					cos(lat) * sin(lon),
+				},
 			};
 			VertexData vertB = {
 				{
@@ -329,6 +348,11 @@ void DrawSphere(VertexData* vertexData){
 					1.0f
 				} ,
 				{ float(lonIndex) / float(kSubdivision), 1.0f + float(latIndex + 1) / float(kSubdivision) },
+				{
+					cos(lat + kLatEvery) * cos(lon) ,
+					sin(lat + kLatEvery),
+					cos(lat + kLatEvery) * sin(lon),
+				} ,
 			};
 			VertexData vertC = {
 				{ 
@@ -338,6 +362,11 @@ void DrawSphere(VertexData* vertexData){
 					1.0f
 				},
 				{ float(lonIndex + 1) / float(kSubdivision), 1.0f + float(latIndex) / float(kSubdivision) },
+				{
+					cos(lat) * cos(lon + kLonEvery) ,
+					sin(lat),
+					cos(lat) * sin(lon + kLonEvery),
+				},
 			};
 			VertexData vertD = {
 				{
@@ -347,6 +376,11 @@ void DrawSphere(VertexData* vertexData){
 					1.0f
 				},
 				{ float(lonIndex + 1) / float(kSubdivision), 1.0f + float(latIndex + 1) / float(kSubdivision) } ,
+				{
+					cos(lat + kLatEvery) * cos(lon + kLonEvery),
+					sin(lat + kLatEvery),
+					cos(lat + kLatEvery) * sin(lon + kLonEvery),
+				},
 			};
 			
 			vertexData[start + 5] = vertA;  //左下 A
@@ -852,7 +886,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
 	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	D3D12_ROOT_PARAMETER rootParameters[3] = {};
+	D3D12_ROOT_PARAMETER rootParameters[4] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].Descriptor.ShaderRegister = 0;
@@ -863,6 +897,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriputorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriputorRange);
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[3].Descriptor.ShaderRegister = 1;
 	desriptionRootSignature.pParameters = rootParameters;
 	desriptionRootSignature.NumParameters = _countof(rootParameters);
 	ID3DBlob* signatureBlob = nullptr;
@@ -899,10 +936,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	inputElementDescs[3].SemanticName = "NORMAL";
-	inputElementDescs[3].SemanticIndex = 0;
-	inputElementDescs[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputElementDescs[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDescs[2].SemanticName = "NORMAL";
+	inputElementDescs[2].SemanticIndex = 0;
+	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDescs{};
 	inputLayoutDescs.pInputElementDescs = inputElementDescs;
 	inputLayoutDescs.NumElements = _countof(inputElementDescs);
@@ -941,22 +978,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	vertexData[0].position = {-0.5f,-0.5f,0.0f,1.0f};//左下
 	vertexData[0].texcoord = { 0.0f,1.0f };
+	vertexData[0].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };//上
 	vertexData[1].texcoord = { 0.5f,0.0f };
+	vertexData[1].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };//右下
 	vertexData[2].texcoord = { 1.0f,1.0f };
+	vertexData[2].normal = { 0.0f,0.0f,-1.0f };
 
 	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };//左下２
 	vertexData[3].texcoord = { 0.0f,1.0f };
+	vertexData[3].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };//上２
 	vertexData[4].texcoord = { 0.5f,0.0f };
+	vertexData[4].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };//右下２
 	vertexData[5].texcoord = { 1.0f,1.0f };
+	vertexData[5].normal = { 0.0f,0.0f,-1.0f };
+
 	//マテリアルリソース
-	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Vector4));
-	Vector4* materialData = nullptr;
+	ID3D12Resource* materialResource = CreatBufferResource(device, sizeof(Material));
+	Material* materialData = nullptr;
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	materialData->color = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	materialData->enableLighting = 1;
+
+
 	//深度値
 	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
 #pragma endregion
@@ -984,17 +1035,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	vertexDataSprite[3].position = { 0.0f,0.0f,0.0f,1.0f };//左上
 	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
+	vertexDataSprite[3].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f };//右上
 	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
+	vertexDataSprite[4].normal = { 0.0f,0.0f,-1.0f };
+
 	vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };//右下
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
+	vertexDataSprite[5].normal = { 0.0f,0.0f,-1.0f };
+
 	//Transform
-	ID3D12Resource* transformationMatrixResourceSprite = CreatBufferResource(device, sizeof(Matrix4x4));
+	ID3D12Resource* transformationMatrixResourceSprite = CreatBufferResource(device, sizeof(TransformationMatrix));
 	Matrix4x4* transformationMatrixDataSprite = nullptr;
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	*transformationMatrixDataSprite = MakeIdentity4x4();
 	//CPU用Transform
 	struct Transform transformSprite { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	//マテリアルリソース
+	ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
+	Material* materialDataSprite = nullptr;
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
+	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialDataSprite->enableLighting = 1;
 	//WVPスプライト用
 	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
 	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
@@ -1020,12 +1083,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
 	DrawSphere(vertexDataSphere);
 	//Transform
-	ID3D12Resource* transformationMatrixResourceSphere = CreatBufferResource(device, sizeof(Matrix4x4));
-	Matrix4x4* transformationMatrixDataSphere = nullptr;
+	ID3D12Resource* transformationMatrixResourceSphere = CreatBufferResource(device, sizeof(TransformationMatrix));
+	TransformationMatrix* transformationMatrixDataSphere = nullptr;
 	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
-	*transformationMatrixDataSphere = MakeIdentity4x4();
+	transformationMatrixDataSphere->World = MakeIdentity4x4();
+
+	//平行光源
+	ID3D12Resource* directionalLightResource = CreatBufferResource(device, sizeof(DirectiomalLight));
+	DirectiomalLight* directionalLightData = nullptr;
+	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
+	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
+	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
+	directionalLightData->intensity = 1.0f;
+
 	//スフィア用Transform
-	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
+	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
 	
 
 #pragma endregion
@@ -1085,6 +1157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float TransformScale[3] = { 1.0f,1.0f,1.0f };
 	float TransformRotae[3] = { 0.0f, 0.0f, 0.0f };
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
+	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
 	bool useMonsterball = true;
 #pragma endregion
 	MSG msg{};
@@ -1107,12 +1180,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::InputFloat3("Scale", TransformScale);
 			ImGui::InputFloat3("Rotae", TransformRotae);
 			ImGui::InputFloat3("Translate", TransformTranslate);
+			ImGui::DragFloat3("directionalLight",directionalLight, 0.1f);
 			//TransformRotae[1] += 0.01f;
 			*materialData = { materialDataVector[0],materialDataVector[1],materialDataVector[2],materialDataVector[3] };
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
-
+			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
 
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
@@ -1129,7 +1203,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
-			*transformationMatrixDataSphere = worldViewProjectionMatrixSphere;
+			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
 
 			ImGui::Render();
 			//画面色変更
@@ -1171,15 +1245,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//commandList->DrawInstanced(6, 1, 0, 0);
 
 			//スフィア描画
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
-		    commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
 
 			//スプライト描画
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			commandList->DrawInstanced(6, 1, 0, 0);
+			//commandList->DrawInstanced(6, 1, 0, 0);
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 			//リソースバリアを張る
@@ -1241,7 +1317,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSphere->Release();
 	textureResource2->Release();
 	intermediateResource2->Release();
-
+	materialResourceSprite->Release();
+	directionalLightResource->Release();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
