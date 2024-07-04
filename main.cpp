@@ -1204,7 +1204,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
-
+			transformationMatrixDataSphere->World = worldMatrixSphere;
 			ImGui::Render();
 			//画面色変更
 #pragma region
