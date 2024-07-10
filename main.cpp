@@ -43,6 +43,10 @@ struct Matrix4x4
 {
 	float m[4][4];
 };
+struct Matrix3x3
+{
+	float m[3][3];
+};
 struct VertexData
 {
 	Vector4 position;
@@ -59,6 +63,8 @@ struct Material
 {
 	Vector4 color;
 	int32_t enableLighting;
+	float padding[3];
+	Matrix4x4 uvTransform;
 };
 struct TransformationMatrix
 {
@@ -314,8 +320,8 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 	return result;
 }
 //球
-void DrawSphere(VertexData* vertexData){
-	const uint32_t kSubdivision = 16;
+void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
+	const uint32_t kSubdivision = Subdivision;
 	const float kLonEvery = float(M_PI) * 2.0f / float(kSubdivision);//経度 φ
 	const float kLatEvery = float(M_PI) / float(kSubdivision);	//緯度 θ
 
@@ -1021,6 +1027,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
 	materialData->enableLighting = 1;
+	materialData->uvTransform = MakeIdentity4x4();
 
 
 	//深度値
@@ -1073,6 +1080,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialDataSprite->enableLighting = 1;
+	materialDataSprite->uvTransform = MakeIdentity4x4();
 	//WVPスプライト用
 	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
 	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
@@ -1100,7 +1108,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//スフィア用リソース
 #pragma region
-	ID3D12Resource* vertexResourceSphere = CreatBufferResource(device, sizeof(VertexData) * 16 * 16 * 6);
+	const uint32_t Subdivision = 16;
+	ID3D12Resource* vertexResourceSphere = CreatBufferResource(device, sizeof(VertexData) * Subdivision * Subdivision * 6);
 	ID3D12Resource* wvpResourceSphere = CreatBufferResource(device, sizeof(Matrix4x4));
 	Matrix4x4* wvpDataSphere = nullptr;
 	wvpResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&wvpDataSphere));
@@ -1108,12 +1117,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点バッファビューを作成
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * 16 * 16 * 6;
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * Subdivision * Subdivision * 6;
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
 	//頂点リソースに書き込み
 	VertexData* vertexDataSphere = nullptr;
 	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
-	DrawSphere(vertexDataSphere);
+	DrawSphere(vertexDataSphere,Subdivision);
 	//Transform
 	ID3D12Resource* transformationMatrixResourceSphere = CreatBufferResource(device, sizeof(TransformationMatrix));
 	TransformationMatrix* transformationMatrixDataSphere = nullptr;
@@ -1131,6 +1140,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//スフィア用Transform
 	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
 	
+	//スフィア用インデックス
+	ID3D12Resource* indexResourceSphere = CreatBufferResource(device, sizeof(uint32_t) * 6);
+	D3D12_INDEX_BUFFER_VIEW indexBufferViewSphere{};
+	indexBufferViewSphere.BufferLocation = indexResourceSphere->GetGPUVirtualAddress();
+	indexBufferViewSphere.SizeInBytes = sizeof(uint32_t) * 6;
+	indexBufferViewSphere.Format = DXGI_FORMAT_R32_UINT;
+	//データを送る
+	uint32_t* indexDataSphere = nullptr;
+	indexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSphere));
+	indexDataSphere[0] = 0;
+	indexDataSphere[1] = 1;
+	indexDataSphere[2] = 2;
+	indexDataSphere[3] = 1;
+	indexDataSphere[4] = 3;
+	indexDataSphere[5] = 2;
 
 #pragma endregion
 	//DSVの設定
@@ -1190,6 +1214,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float TransformRotae[3] = { 0.0f, 0.0f, 0.0f };
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
+	//uvTransform
+	struct Transform uvTransformSprite {
+		{ 1.0f, 1.0f, 1.0f },
+		{ 0.0f,0.0f,0.0f },
+		{ 0.0f,0.0f,0.0f },
+	};
 	bool useMonsterball = true;
 #pragma endregion
 	MSG msg{};
@@ -1213,6 +1243,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::InputFloat3("Rotae", TransformRotae);
 			ImGui::InputFloat3("Translate", TransformTranslate);
 			ImGui::DragFloat3("directionalLight",directionalLight, 0.1f);
+			ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+
 			//TransformRotae[1] += 0.01f;
 			*materialData = { materialDataVector[0],materialDataVector[1],materialDataVector[2],materialDataVector[3] };
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
@@ -1220,6 +1254,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
 			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
 			directionalLightData->direction = Normalize(directionalLightData->direction);
+
+			//uvTransform
+			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
+			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
+			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.transform));
+			materialDataSprite->uvTransform = uvTransformMatrix;
 
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
@@ -1290,7 +1330,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(16 * 16 * 6, 1, 0, 0);
+			commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 			//リソースバリアを張る
@@ -1355,6 +1395,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialResourceSprite->Release();
 	directionalLightResource->Release();
 	indexResourceSprite->Release();
+	indexResourceSphere->Release();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
