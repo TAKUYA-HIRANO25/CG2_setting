@@ -78,9 +78,14 @@ struct DirectiomalLight {
 	Vector3 direction;
 	float intensity;
 };
+struct MaterialData {
+	std::string textureFilePath;
+};
 struct ModelData {
 	std::vector<VertexData> vertices;
+	MaterialData material;
 };
+
 //球
 struct Sphere {
 	Vector3 center;
@@ -328,7 +333,7 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 	return result;
 }
 //球
-void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
+void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
 	const uint32_t kSubdivision = Subdivision;
 	const float kLonEvery = float(M_PI) * 2.0f / float(kSubdivision);//経度 φ
 	const float kLatEvery = float(M_PI) / float(kSubdivision);	//緯度 θ
@@ -339,7 +344,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
 
 		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
 			float lon = lonIndex * kLonEvery;//φ
-			
+
 			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
 			VertexData vertA = {
 				{
@@ -347,7 +352,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
 					sin(lat),
 					cos(lat) * sin(lon),
 					1.0f
-				},	
+				},
 				{ float(lonIndex) / float(kSubdivision), 1.0f + float(latIndex) / float(kSubdivision) },
 				{
 					cos(lat) * cos(lon) ,
@@ -370,7 +375,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
 				} ,
 			};
 			VertexData vertC = {
-				{ 
+				{
 					cos(lat) * cos(lon + kLonEvery) ,
 					sin(lat),
 					cos(lat) * sin(lon + kLonEvery),
@@ -397,7 +402,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
 					cos(lat + kLatEvery) * sin(lon + kLonEvery),
 				},
 			};
-			
+
 			vertexData[start + 5] = vertA;  //左下 A
 
 			vertexData[start + 4] = vertB;  //上 B
@@ -413,6 +418,26 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision){
 		}
 	}
 }
+//Textureデータ
+MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
+	MaterialData materialData;
+	std::string line;
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
+	while (std::getline(file, line))
+	{
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		if (identifier == "map_Kd") {
+			std::string textureFilename;
+			s >> textureFilename;
+			materialData.textureFilePath = directoryPath + "/" + textureFilename;
+		}
+	}
+	return materialData;
+}
 //objファイル読み込み 
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
 	//宣言
@@ -425,7 +450,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 	std::ifstream file(directoryPath + "/" + filename);
 	assert(file.is_open());
 	//ファイル読み込み
-	while (std::getline(file,line))
+	while (std::getline(file, line))
 	{
 		std::string identifier;
 		std::istringstream s(line);
@@ -435,19 +460,23 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
 			position.w = 1.0f;
+			position.x *= -1.0f;
 			positions.push_back(position);
 		}
 		else if (identifier == "vt") {
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
+			texcoord.y = 1.0f - texcoord.y;
 			texcoords.push_back(texcoord);
 		}
 		else if (identifier == "vn") {
 			Vector3 normal;
 			s >> normal.x >> normal.y >> normal.z;
+			normal.x *= -1.0f;
 			normals.push_back(normal);
 		}
 		else if (identifier == "f") {
+			VertexData triangle[3];
 			//三角形を作る
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDifinition;
@@ -461,16 +490,24 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 					elementIndices[element] = std::stoi(index);
 				}
 				Vector4 position = positions[elementIndices[0] - 1];
-				Vector2 texcoord = texcoords[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
 				Vector3 normal = normals[elementIndices[2] - 1];
-				VertexData vertex = { position,texcoord,normal };
-				modelData.vertices.push_back(vertex);
+				//VertexData vertex = { position,texcoord,normal };
+				//modelData.vertices.push_back(vertex);
+				triangle[faceVertex] = { position,texcoord,normal };
 			}
+			modelData.vertices.push_back(triangle[2]); //2
+			modelData.vertices.push_back(triangle[1]); //1
+			modelData.vertices.push_back(triangle[0]); //0
+		}
+		else if (identifier == "mtllib") {
+			std::string materialFilename;
+			s >> materialFilename;
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
 		}
 	}
 	return modelData;
 }
-
 //ノーマライズ
 float Length(const Vector3& v) {
 	float result;
@@ -579,13 +616,13 @@ IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, ID
 	IDxcBlob* shaderBlob = nullptr;
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
-	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath,profile)));
+	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
 	shaderSource->Release();
 	shaderResult->Release();
 	return shaderBlob;
 }
 //Resource関数
-ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes) 
+ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes)
 {
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -598,7 +635,7 @@ ID3D12Resource* CreatBufferResource(ID3D12Device* device, size_t sizeInBytes)
 	vertexResourceDesc.SampleDesc.Count = 1;
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	ID3D12Resource* vertexResource = nullptr;
-    HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 	return vertexResource;
@@ -714,7 +751,7 @@ ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t 
 	return resource;
 }
 //CPUハンドル
-D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index) 
+D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	handleCPU.ptr += (descriptorSize * index);
@@ -760,7 +797,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ShowWindow(hwnd, SW_SHOW);
 #pragma endregion
-//デバッグレイヤー
+	//デバッグレイヤー
 #ifdef _DEBUG
 	ID3D12Debug1* debugController = nullptr;
 	if ((SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))) {
@@ -795,7 +832,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	assert(useAdapter != nullptr);
 #pragma endregion
-	 //デバイスの生成
+	//デバイスの生成
 #pragma region
 	ID3D12Device* device = nullptr;
 
@@ -814,11 +851,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	assert(device != nullptr);
 	Log("Complete create D3D12Device!!!\n");
-//デバッグログ
+	//デバッグログ
 #ifdef _DEBUG
 	ID3D12InfoQueue* infoQueue = nullptr;
 	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
-		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION,true);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 		D3D12_MESSAGE_ID denyIds[] = { D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE };
@@ -929,7 +966,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	texturSrvHandleCPU2.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	texturSrvHandleGPU2.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	device->CreateShaderResourceView(textureResource2, &srvDesc2, texturSrvHandleCPU2);
-	
+
 	//読み込み
 	DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
 	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
@@ -970,7 +1007,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descriputorRange[0].NumDescriptors = 1;
 	descriputorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriputorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	
+
 	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
 	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	D3D12_ROOT_PARAMETER rootParameters[4] = {};
@@ -1014,7 +1051,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(),
 		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 	assert(SUCCEEDED(hr));
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3]= {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -1046,10 +1083,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点リソース作成
 #pragma region
 	ModelData modeData = LoadObjFile("resources", "plane.obj");
+	//テクスチャー
+#pragma region
+	//読み込み3
+	DirectX::ScratchImage mipImages3 = LoadTexture(modeData.material.textureFilePath);
+	const DirectX::TexMetadata& metadata3 = mipImages3.GetMetadata();
+	ID3D12Resource* textureResource3 = CreateTextureResourece(device, metadata3);
+	ID3D12Resource* intermediateResource3 = UploadTextureData(textureResource3, mipImages3, device, commandList);
+
+	//SRVの設定3
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc3{};
+	srvDesc3.Format = metadata3.format;
+	srvDesc3.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc3.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc3.Texture2D.MipLevels = UINT(metadata3.mipLevels);
+
+	//SRVの場所決め3
+	D3D12_CPU_DESCRIPTOR_HANDLE texturSrvHandleCPU3 = GetCPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
+	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU3 = GetGPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
+	texturSrvHandleCPU3.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	texturSrvHandleGPU3.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	device->CreateShaderResourceView(textureResource3, &srvDesc3, texturSrvHandleCPU3);
+#pragma endregion
 	ID3D12Resource* vertexResource = CreatBufferResource(device, sizeof(VertexData) * modeData.vertices.size());
 	ID3D12Resource* wvpResource = CreatBufferResource(device, sizeof(TransformationMatrix));
 	TransformationMatrix* wvpData = nullptr;
-	wvpResource->Map(0,nullptr, reinterpret_cast<void**>(&wvpData));
+	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 	wvpData->WVP = MakeIdentity4x4();
 	wvpData->World = MakeIdentity4x4();
 #pragma endregion
@@ -1143,7 +1202,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	*transformationMatrixDataSprite = MakeIdentity4x4();
 	//CPU用Transform
-	struct Transform transformSprite { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	struct Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
 
 	//マテリアルリソース
 	ID3D12Resource* materialResourceSprite = CreatBufferResource(device, sizeof(Material));
@@ -1211,7 +1270,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//スフィア用Transform
 	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
-	
+
 	//スフィア用インデックス
 	ID3D12Resource* indexResourceSphere = CreatBufferResource(device, sizeof(uint32_t) * 6);
 	D3D12_INDEX_BUFFER_VIEW indexBufferViewSphere{};
@@ -1283,7 +1342,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());
 	float materialDataVector[4] = { 1,1,1,1 };
 	float TransformScale[3] = { 1.0f,1.0f,1.0f };
-	float TransformRotae[3] = { 0.0f, 0.0f, 0.0f };
+	float TransformRotae[3] = { 0.0f, 3.14f, 0.0f };
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
 	//uvTransform
@@ -1292,7 +1351,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 0.0f,0.0f,0.0f },
 		{ 0.0f,0.0f,0.0f },
 	};
-	bool useMonsterball = true;
+	bool useMonsterball = false;
 #pragma endregion
 	MSG msg{};
 	//ゲーム処理
@@ -1308,13 +1367,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-//			ImGui::ShowDemoWindow();
+			//			ImGui::ShowDemoWindow();
 			ImGui::Checkbox("useMonsterBall", &useMonsterball);
 			ImGui::DragFloat4("materialData", materialDataVector);
 			ImGui::DragFloat3("Scale", TransformScale);
 			ImGui::DragFloat3("Rotae", TransformRotae);
 			ImGui::DragFloat3("Translate", TransformTranslate);
-			ImGui::DragFloat3("directionalLight",directionalLight, 0.1f);
+			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
 			ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
@@ -1387,7 +1446,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//三角形の色変更
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
+			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			commandList->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
 
@@ -1396,6 +1455,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
 			//commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
 
 			//スプライト描画
@@ -1470,6 +1530,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightResource->Release();
 	indexResourceSprite->Release();
 	indexResourceSphere->Release();
+	textureResource3->Release();
+	intermediateResource3->Release();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
@@ -1481,7 +1543,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//警告
 	IDXGIDebug1* debug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL,DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
@@ -1489,4 +1551,3 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	return 0;
 }
-
