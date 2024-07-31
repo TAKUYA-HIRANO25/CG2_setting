@@ -1353,11 +1353,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui_ImplDX12_Init(device.Get(), swapChainDesc.BufferCount, rtvDesc.Format,
 		srvDescriptoHeap.Get(), srvDescriptoHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());
-	float materialDataVector[4] = { 1,1,1,1 };
 	float TransformScale[3] = { 1.0f,1.0f,1.0f };
 	float TransformRotae[3] = { 0.0f, 3.14f, 0.0f };
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
+
+	float sphereTransformScale[3] = { 1.0f,1.0f,1.0f };
+	float sphereTransformRotae[3] = { 0.0f, 0.0f, 0.0f };
+	float sphereTransformTranslate[3] = { 0.0f,0.0f,1.0f };
+
+	float spriteTransformScale[3] = { 1.0f,1.0f,1.0f };
+	float spriteTransformRotae[3] = { 0.0f, 0.0f, 0.0f };
+	float spriteTransformTranslate[3] = { 0.0f,0.0f,0.0f };
+
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
+	float directionalLightColor[4] = { 1.0f,1.0f,1.0f,1.0f };
+	float directionalLightIntensity[1] = { 1.0f };
 	//uvTransform
 	struct Transform uvTransformSprite {
 		{ 1.0f, 1.0f, 1.0f },
@@ -1365,6 +1375,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 0.0f,0.0f,0.0f },
 	};
 	bool useMonsterball = false;
+
 #pragma endregion
 	MSG msg{};
 	//ゲーム処理
@@ -1382,20 +1393,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::NewFrame();
 			//			ImGui::ShowDemoWindow();
 			ImGui::Checkbox("useMonsterBall", &useMonsterball);
-			ImGui::DragFloat4("materialData", materialDataVector);
-			ImGui::DragFloat3("Scale", TransformScale);
-			ImGui::DragFloat3("Rotae", TransformRotae);
-			ImGui::DragFloat3("Translate", TransformTranslate);
-			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
+			ImGui::DragFloat3("modelScale", TransformScale);//モデル
+			ImGui::DragFloat3("modelRotae", TransformRotae);
+			ImGui::DragFloat3("modelTranslate", TransformTranslate);
+			ImGui::DragFloat3("sphereScale", sphereTransformScale);//スフィア
+			ImGui::DragFloat3("sphereRotae", sphereTransformRotae);
+			ImGui::DragFloat3("sphereTranslate", sphereTransformTranslate);
+			ImGui::DragFloat3("spriteScale", spriteTransformScale);//スプライト
+			ImGui::DragFloat3("spriteRotae", spriteTransformRotae);
+			ImGui::DragFloat3("spriteTranslate", spriteTransformTranslate);
+			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);//ライティング
+			ImGui::DragFloat4("directionalLightColor", directionalLightColor, 0.1f);
+			ImGui::DragFloat("directionalLightIntensity", directionalLightIntensity, 0.1f);
 			ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+
+			transformSphere.rotate = { sphereTransformRotae[0],sphereTransformRotae[1],sphereTransformRotae[2] };
+			transformSphere.scale = { sphereTransformScale[0], sphereTransformScale[1], sphereTransformScale[2] };
+			transformSphere.transform = { sphereTransformTranslate[0],sphereTransformTranslate[1],sphereTransformTranslate[2] };
+
+			transformSprite.rotate = { spriteTransformRotae[0],spriteTransformRotae[1],spriteTransformRotae[2] };
+			transformSprite.scale = { spriteTransformScale[0], spriteTransformScale[1], spriteTransformScale[2] };
+			transformSprite.transform = { spriteTransformTranslate[0],spriteTransformTranslate[1],spriteTransformTranslate[2] };
+			//transformSphere.rotate.y += 0.03f;
 
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
+
 			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
+			directionalLightData->color = { directionalLightColor[0],directionalLightColor[1] ,directionalLightColor[2] ,directionalLightColor[3]};
+			directionalLightData->intensity = directionalLightIntensity[0];
 			directionalLightData->direction = Normalize(directionalLightData->direction);
 
 			//uvTransform
@@ -1416,13 +1446,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			wvpData->World = worldMatrix;
 
 			//球の３次元化 WVPスフィア用
-			transformSphere.rotate.y += 0.03f;
 			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.transform);
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
 			transformationMatrixDataSphere->World = worldMatrixSphere;
+
+			//WVPスプライト用
+			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
+			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSorite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+			*transformationMatrixDataSprite = worldViewProjectionMatrixSorite;
+
 			ImGui::Render();
 			//画面色変更
 #pragma region
@@ -1469,7 +1506,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
-			//commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
+			commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
 
 			//スプライト描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
@@ -1477,7 +1514,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 			//リソースバリアを張る
