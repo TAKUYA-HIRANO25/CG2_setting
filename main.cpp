@@ -1082,7 +1082,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//頂点リソース作成
 #pragma region
-	ModelData modeData = LoadObjFile("resources", "plane.obj");
+	ModelData modeData = LoadObjFile("resources", "axis.obj");
 	//テクスチャー
 #pragma region
 	//読み込み3
@@ -1209,7 +1209,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Material* materialDataSprite = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialDataSprite->enableLighting = 0;
+	materialDataSprite->enableLighting = 1;
 	materialDataSprite->uvTransform = MakeIdentity4x4();
 
 	//WVPスプライト用
@@ -1367,16 +1367,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-			//			ImGui::ShowDemoWindow();
+			//ImGui::ShowDemoWindow();
 			ImGui::Checkbox("useMonsterBall", &useMonsterball);
 			ImGui::DragFloat4("materialData", materialDataVector);
 			ImGui::DragFloat3("Scale", TransformScale);
 			ImGui::DragFloat3("Rotae", TransformRotae);
 			ImGui::DragFloat3("Translate", TransformTranslate);
 			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
-			ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
-			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+			//ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
+			//ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			//ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
@@ -1448,15 +1448,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
+			//commandList->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
 
 			//スフィア描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
-			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
+			//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
-			//commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
+			commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
 
 			//スプライト描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
