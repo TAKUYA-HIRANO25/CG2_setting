@@ -1079,6 +1079,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		dxcCompiler, includeHandler);
 	assert(pixelShaderBlod != nullptr);
 
+
 #pragma endregion
 	//頂点リソース作成
 #pragma region
