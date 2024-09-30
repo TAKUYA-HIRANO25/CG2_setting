@@ -581,7 +581,7 @@ std::string ConvertString(const std::wstring& str) {
 	return result;
 }
 
-//DXC Compileshader関数
+//DXC Compileir関数
 IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, IDxcUtils* dxcUtils, IDxcCompiler3* dxCompiler, IDxcIncludeHandler* includeHandler) {
 	//hlsファイル読み込み
 	Log(ConvertString(std::format(L"Begin CompileShader, path:{},profile:{}\n", filePath, profile)));
@@ -1072,10 +1072,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	IDxcBlob* vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils,
+	IDxcBlob* vertexShaderBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils,
 		dxcCompiler, includeHandler);
 	assert(vertexShaderBlob != nullptr);
-	IDxcBlob* pixelShaderBlod = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils,
+	IDxcBlob* pixelShaderBlod = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils,
 		dxcCompiler, includeHandler);
 	assert(pixelShaderBlod != nullptr);
 
