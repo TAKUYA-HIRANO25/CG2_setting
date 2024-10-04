@@ -1382,7 +1382,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
 			ImGui::DragFloat3("Translate", TransformTranslate);
 			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
-			ImGui::ColorEdit4("color", MaterialColor, 0.1f);
+			ImGui::ColorEdit4("color", MaterialColor );
 			//ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
 			//ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			//ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
@@ -1393,7 +1393,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
 			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
 			directionalLightData->direction = Normalize(directionalLightData->direction);
-
+			directionalLightData->color = { MaterialColor[0],MaterialColor[1], MaterialColor[2], MaterialColor[3] };
 			//uvTransform
 			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
