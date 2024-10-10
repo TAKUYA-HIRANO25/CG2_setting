@@ -1393,7 +1393,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.translate = { TransformTranslate[0],TransformTranslate[1],TransformTranslate[2] };
 			directionalLightData->direction = { directionalLight[0],directionalLight[1] ,directionalLight[2] };
 			directionalLightData->direction = Normalize(directionalLightData->direction);
-			directionalLightData->color = { MaterialColor[0],MaterialColor[1], MaterialColor[2], MaterialColor[3] };
+			directionalLightData->color = {1,1,1,1};
+			materialData->color = { MaterialColor[0], MaterialColor[1], MaterialColor[2], MaterialColor[3] };
 			//uvTransform
 			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
