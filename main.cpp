@@ -1106,7 +1106,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//頂点リソース作成
 #pragma region
-	ModelData modeData = LoadObjFile("resources", "plane.obj");
+	ModelData modeData = LoadObjFile("resources/fence", "fence.obj");
 	//テクスチャー
 #pragma region
 	//読み込み3
