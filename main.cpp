@@ -1106,7 +1106,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//頂点リソース作成
 #pragma region
-	ModelData modeData = LoadObjFile("resources/fence", "fence.obj");
+	ModelData modeData = LoadObjFile("resources", "plane.obj");
 	//テクスチャー
 #pragma region
 	//読み込み3
@@ -1369,7 +1369,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float TransformRotae[3] = { 0.0f, 3.14f, 0.0f };
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
-	float MaterialColor[4] = { 0.0f,0.0f,0.0f,1.0f };
+	float MaterialColor[4] = { 1.0f,1.0f,1.0f,1.0f };
 	//uvTransform
 	struct Transform uvTransformSprite {
 		{ 1.0f, 1.0f, 1.0f },
