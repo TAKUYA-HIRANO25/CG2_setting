@@ -1,8 +1,12 @@
 #pragma once
 #include "Windows.h"
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+#include <wrl.h>
 class Input {
 
 public:
+	template <class T>using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 
@@ -11,6 +15,6 @@ public:
 
 private:
 
-
+	ComPtr<IDirectInputDevice8>keyboard;
 
 };
