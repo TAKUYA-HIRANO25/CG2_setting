@@ -13,6 +13,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <wrl.h>
+#include "Input.h"
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -933,6 +934,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
 	assert(SUCCEEDED(hr));
 #pragma endregion
+	//キー入力
+#pragma region
+	Input* input;
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
+#pragma endregion
 	//RTVの設定
 #pragma region
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
@@ -1506,7 +1513,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	//解放
 	CloseHandle(fenceEvent);
-	
+	delete input;
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
