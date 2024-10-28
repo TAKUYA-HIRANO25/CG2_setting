@@ -14,6 +14,7 @@
 #include <math.h>
 #include <wrl.h>
 #include "Input.h"
+#include "WinApp.h"
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -25,6 +26,7 @@
 #pragma comment(lib,"dxgi.lib")
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 struct Vector4
 {
 	float x;
@@ -533,7 +535,7 @@ struct TransformS {
 TransformS transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 TransformS cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 //ウィンドウ
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+/*LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
 		return true;
 	}
@@ -548,7 +550,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	}
 
 	return DefWindowProc(hwnd, msg, wparam, lparam);
-}
+}*/
 
 //ログ
 void Log(const std::string& message) {
@@ -788,7 +790,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//WinAPI
 #pragma region 
-	WNDCLASS wc{};
+	/*WNDCLASS wc{};
 	wc.lpfnWndProc = WindowProc;
 	wc.lpszClassName = L"CG2WindowClass";
 	wc.hInstance = GetModuleHandle(nullptr);
@@ -816,7 +818,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		nullptr
 	);
 
-	ShowWindow(hwnd, SW_SHOW);
+	ShowWindow(hwnd, SW_SHOW);*/
+	WinApp* winApp = nullptr;
+	winApp = new WinApp();
+	winApp->Initialize();
+
 #pragma endregion
 	//デバッグレイヤー
 #ifdef _DEBUG
