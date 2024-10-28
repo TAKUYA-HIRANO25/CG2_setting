@@ -778,7 +778,15 @@ struct D3DResourceLeakChecker {
 };
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakChek;
+	//初期化　変数
+#pragma region
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+
+	assert(SUCCEEDED(hr));
+#pragma endregion
+	//WinAPI
 #pragma region 
 	WNDCLASS wc{};
 	wc.lpfnWndProc = WindowProc;
@@ -818,14 +826,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debugController->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif
-	//初期化　変数
-#pragma region
-	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
-
-	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
-
-	assert(SUCCEEDED(hr));
-#pragma endregion
 
 #pragma region
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
