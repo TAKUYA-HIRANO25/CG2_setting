@@ -1398,6 +1398,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			//ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 
+			input->Update();
+			if (input->TriggerKey(DIK_0)) {
+				OutputDebugStringA("HIT0\n");
+			}
+
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -1489,10 +1494,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 			
-			input->Update();
-			if (input->TriggerKey(DIK_0)) {
-				OutputDebugStringA("HIT0\n");
-			}
 			//リソースバリアを張る
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
