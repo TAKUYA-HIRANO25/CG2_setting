@@ -3,12 +3,14 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <wrl.h>
+#include "WinApp.h"
+
 class Input {
 
 public:
 	template <class T>using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-	void Initialize(HINSTANCE hInstance, HWND hwnd);
+	void Initialize(WinApp* winApp);
 
 	void Update();
 
@@ -25,4 +27,6 @@ private:
 	BYTE keyPre[256] = {};
 
 	ComPtr<IDirectInput8>directInput;
+
+	WinApp* winApp = nullptr;
 };

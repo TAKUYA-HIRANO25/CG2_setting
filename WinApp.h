@@ -21,6 +21,8 @@ public:
 
 	void Update();
 
+	void Finalize();
+
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 	HWND GetHwnd() const { return hwnd; }

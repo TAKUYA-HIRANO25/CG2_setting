@@ -915,7 +915,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	Input* input;
 	input = new Input();
-	input->Initialize(winApp->GetWCInStance(), winApp->GetHwnd());
+	input->Initialize(winApp);
 #pragma endregion
 	//RTVの設定
 #pragma region
@@ -1504,7 +1504,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #ifndef _DEBUG
 	//debugController->Release();
 #endif _DEBUG
-	CloseWindow(winApp->GetHwnd());
 	//警告
 	/*IDXGIDebug1* debug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
@@ -1513,8 +1512,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
 	}*/
-
-	CoUninitialize();
+	winApp->Finalize();
 
 	return 0;
 }
