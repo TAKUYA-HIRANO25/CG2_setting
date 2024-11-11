@@ -23,21 +23,17 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 void WinApp::Initialize()
 {
 
-	WNDCLASS wc{};
 	wc.lpfnWndProc = WindowProc;
 	wc.lpszClassName = L"CG2WindowClass";
 	wc.hInstance = GetModuleHandle(nullptr);
 
 	RegisterClass(&wc);
 
-	const int32_t kClientWidth = 1280;
-	const int32_t kClientHeight = 720;
-
 	RECT wrc = { 0,0,kClientWidth,kClientHeight };
 
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-	HWND hwnd = CreateWindow(
+	hwnd = CreateWindow(
 		wc.lpszClassName,
 		L"CG2",
 		WS_OVERLAPPEDWINDOW,

@@ -23,6 +23,20 @@ public:
 
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+	HWND GetHwnd() const { return hwnd; }
+
+	HINSTANCE GetWCInStance() const { return wc.hInstance; }
+
+public:
+
+	static const int32_t kClientWidth = 1280;
+	static const int32_t kClientHeight = 720;
+
 
 private:
+
+	HWND hwnd = nullptr;
+
+	WNDCLASS wc{};
+
 };
