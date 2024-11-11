@@ -19,8 +19,6 @@ class WinApp {
 public:
 	void Initialize();
 
-	void Update();
-
 	void Finalize();
 
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -28,6 +26,8 @@ public:
 	HWND GetHwnd() const { return hwnd; }
 
 	HINSTANCE GetWCInStance() const { return wc.hInstance; }
+
+	bool ProcessMessage();
 
 public:
 

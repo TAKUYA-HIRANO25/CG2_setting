@@ -1350,14 +1350,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 	bool useMonsterball = false;
 #pragma endregion
-	MSG msg{};
-	//ゲーム処理
-	while (msg.message != WM_QUIT)
-	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
 
+	//ゲーム処理
+	while (true)
+	{
+		if (winApp->ProcessMessage()) {
+			break;
 		}
 		else {
 			//imgui
