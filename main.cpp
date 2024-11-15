@@ -1538,7 +1538,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
+			commandList->DrawInstanced(UINT(modeData.vertices.size()), 10, 0, 0);
 
 			//スフィア描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
