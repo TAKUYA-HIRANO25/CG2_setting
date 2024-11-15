@@ -1011,13 +1011,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	assert(SUCCEEDED(hr));
 #pragma endregion
-	//ルートシグネチャの生成
+	//ルートシグネチャの生成 
 #pragma region
 	D3D12_DESCRIPTOR_RANGE descriputorRange[1] = {};
 	descriputorRange[0].BaseShaderRegister = 0;
 	descriputorRange[0].NumDescriptors = 1;
 	descriputorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriputorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
 
 	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
 	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -1039,6 +1040,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[3].Descriptor.ShaderRegister = 1;
 
+	//パーティクル
 	rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[4].DescriptorTable.pDescriptorRanges = descriputorRange;
@@ -1293,7 +1295,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const uint32_t kNumInstance = 10;
 	// Instance用のTransformationMatrixリソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource =
-		CreatBufferResource(device, sizeof(TransformationMatrix) * kNumInstance);
+	CreatBufferResource(device, sizeof(TransformationMatrix) * kNumInstance);
 	// 書き込むためのアドレスを取得
 	TransformationMatrix* instancingData = nullptr;
 	instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
@@ -1480,6 +1482,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.transform));
 			materialDataSprite->uvTransform = uvTransformMatrix;
 
+
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransfprm.scale, cameraTransfprm.rotate, cameraTransfprm.translate);
@@ -1500,6 +1503,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
 			transformationMatrixDataSphere->World = worldMatrixSphere;
 			ImGui::Render();
+
+			//パーティクル
+			for (uint32_t index = 0; index < kNumInstance; index++) {
+				Matrix4x4 worldmatrix = MakeAffineMatrix(transforms[index].scale, transforms[index].rotate, transforms[index].transform);
+				Matrix4x4 worldViewProjectionMatrix = Multiply(worldmatrix, worldViewProjectionMatrix);
+				instancingData[index].WVP = worldViewProjectionMatrix;
+				instancingData[index].World = worldmatrix;
+			
+			}
 			//画面色変更
 #pragma region
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
@@ -1536,9 +1548,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//三角形の色変更
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
+			commandList->SetGraphicsRootDescriptorTable(4, texturSrvHandleGPU3);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(UINT(modeData.vertices.size()), 10, 0, 0);
+			commandList->DrawInstanced(UINT(modeData.vertices.size()), kNumInstance, 0, 0);
 
 			//スフィア描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
