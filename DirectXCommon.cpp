@@ -122,26 +122,23 @@ void DirectXCommon::DeviceInitialize()
 void DirectXCommon::CommandInitialize()
 {
 	HRESULT hr;
-
-#pragma region CommandQueue
 	// コマンドキューを生成
+#pragma region 
 	commandQueue = nullptr;
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 	// コマンドキューの生成がうまくいかなかったので起動できない
 	assert(SUCCEEDED(hr));
 #pragma endregion
-
-#pragma region CommandAllocator
 	// コマンドアロケータの生成
+#pragma region 
 	commandAllocator = nullptr;
 	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));
 	// コマンドアロケータの生成がうまくいかなかったので起動できない
 	assert(SUCCEEDED(hr));
 #pragma endregion
-
-#pragma region CommandList
 	// コマンドリストの生成
+#pragma region 
 	commandList = nullptr;
 	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList));
 	// コマンドリストの生成がうまくいかなかったので起動できない
@@ -284,10 +281,7 @@ void DirectXCommon::ImGuiInitialize()
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(winApp->GetHwnd());
-	ImGui_ImplDX12_Init(device.Get(),
-		swapChainDesc.BufferCount,
-		rtvDesc.Format,
-		srvDescriptorHeap.Get(),
-		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+	ImGui_ImplDX12_Init(device.Get(),swapChainDesc.BufferCount,rtvDesc.Format,
+		srvDescriptorHeap.Get(),srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }

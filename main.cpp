@@ -783,11 +783,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakChek;
 	//初期化　変数
 #pragma region
-	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
+	/*Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 
-	assert(SUCCEEDED(hr));
+	assert(SUCCEEDED(hr));*/
 #pragma endregion
 	//WinAPI
 #pragma region 
@@ -796,17 +796,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	winApp->Initialize();
 
 #pragma endregion
+	//DirectCommon
+#pragma region 
+	DirectXCommon* dxCommon = nullptr;
+	dxCommon = new DirectXCommon();
+	dxCommon->Initialize(winApp);
+
+#pragma endregion
 	//デバッグレイヤー
 #ifdef _DEBUG
-	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3D12Debug1> debugController = nullptr;
 	if ((SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))) {
 		debugController->EnableDebugLayer();
 		debugController->SetEnableGPUBasedValidation(TRUE);
-	}
+	}*/
 #endif
-
+	//アダプター
 #pragma region
-	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
+	/*Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 
 	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i,
 		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter))
@@ -821,11 +828,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		useAdapter = nullptr;
 	}
 
-	assert(useAdapter != nullptr);
+	assert(useAdapter != nullptr);*/
 #pragma endregion
 	//デバイスの生成
 #pragma region
-	Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
 
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_12_2,D3D_FEATURE_LEVEL_12_1,D3D_FEATURE_LEVEL_12_0
@@ -841,10 +848,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	}
 	assert(device != nullptr);
-	Log("Complete create D3D12Device!!!\n");
+	Log("Complete create D3D12Device!!!\n");*/
 	//デバッグログ
 #ifdef _DEBUG
-	Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
 	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
@@ -856,13 +863,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		filter.DenyList.pIDList = denyIds;
 		filter.DenyList.NumSeverities = _countof(severities);
 		filter.DenyList.pSeverityList = severities;
-		infoQueue->PushStorageFilter(&filter);
+		infoQueue->PushStorageFilter(&filter);*/
 	}
 #endif
 #pragma endregion
 	//コマンドキューの生成
 #pragma region
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue = nullptr;
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 	assert(SUCCEEDED(hr));
@@ -875,18 +882,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//コマンドリストの生成
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList = nullptr;
 	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList));
-	assert(SUCCEEDED(hr));
+	assert(SUCCEEDED(hr));*/
 
 #pragma endregion
 	//ディスクリプタサイズ
 #pragma region
-	const uint32_t desriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	/*const uint32_t desriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	const uint32_t desriptorSizeRTV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	const uint32_t desriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	const uint32_t desriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);*/
 #pragma endregion
 	//スワップチューンの生成
 #pragma region
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
+	/*Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = WinApp::kClientWidth;
 	swapChainDesc.Height = WinApp::kClientHeight;
@@ -895,13 +902,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = 2;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue.Get(), winApp->GetHwnd(), &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain.GetAddressOf()));
+	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue.Get(), winApp->GetHwnd(), &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain.GetAddressOf()));*/
 #pragma endregion
 	//ディスクリプタヒープの生成
 #pragma region
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptoHeap = CreateDescrriptHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	/*Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptoHeap = CreateDescrriptHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptoHeap = CreateDescrriptHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap = CreateDescrriptHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap = CreateDescrriptHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);*/
 #pragma endregion
 #pragma endregion
 	//Resourceを引っ張ってくる
@@ -920,7 +927,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//RTVの設定
 #pragma region
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+	/*D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = GetCPUDescriptorHandle(rtvDescriptoHeap, desriptorSizeRTV, 0);
@@ -929,17 +936,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateRenderTargetView(swapChainResources[0].Get(), &rtvDesc, rtvHandles[0]);
 	rtvHandles[1] = GetCPUDescriptorHandle(rtvDescriptoHeap, desriptorSizeRTV, 1);
 	//rtvHandles[1].ptr = rtvHandles[0].ptr + device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	device->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);
+	device->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);*/
 #pragma endregion
 	//fence
 #pragma region
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
 	uint64_t fenceValue = 0;
 	hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 	assert(SUCCEEDED(hr));
 	//イベント制作
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	assert(fenceEvent != nullptr);
+	assert(fenceEvent != nullptr);*/
 #pragma endregion
 	//テクスチャー
 #pragma region
@@ -987,7 +994,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//DXCの初期化
 #pragma region
-	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;
+	/*Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;
 	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler = nullptr;
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
 	assert(SUCCEEDED(hr));
@@ -995,7 +1002,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler = nullptr;
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
-	assert(SUCCEEDED(hr));
+	assert(SUCCEEDED(hr));*/
 #pragma endregion
 	//ルートシグネチャの生成
 #pragma region
@@ -1157,7 +1164,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialData->uvTransform = MakeIdentity4x4();
 
 	//深度値
-	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = CreateDepthStencilTextureResource(device.Get(), WinApp::kClientWidth, WinApp::kClientHeight);
+	//Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource = CreateDepthStencilTextureResource(device.Get(), WinApp::kClientWidth, WinApp::kClientHeight);
 
 #pragma endregion
 	//リソース用頂点リソース
@@ -1288,10 +1295,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//DSVの設定
 #pragma region
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	/*D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());*/
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	depthStencilDesc.DepthEnable = true;
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
@@ -1316,7 +1323,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//Scissorとビューポート
 #pragma region
-	D3D12_VIEWPORT viewport{};
+	/*D3D12_VIEWPORT viewport{};
 	viewport.Width = WinApp::kClientWidth;
 	viewport.Height = WinApp::kClientHeight;
 	viewport.TopLeftX = 0;
@@ -1327,17 +1334,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.left = 0;
 	scissorRect.right = WinApp::kClientWidth;
 	scissorRect.top = 0;
-	scissorRect.bottom = WinApp::kClientHeight;
+	scissorRect.bottom = WinApp::kClientHeight;*/
 #pragma endregion
 	//デバッグ画面初期化
 #pragma region
-	IMGUI_CHECKVERSION();
+	/*IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(winApp->GetHwnd());
 	ImGui_ImplDX12_Init(device.Get(), swapChainDesc.BufferCount, rtvDesc.Format,
 		srvDescriptoHeap.Get(), srvDescriptoHeap->GetCPUDescriptorHandleForHeapStart(),
-		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());
+		srvDescriptoHeap->GetGPUDescriptorHandleForHeapStart());*/
 	float materialDataVector[4] = { 1,1,1,1 };
 	float TransformScale[3] = { 1.0f,1.0f,1.0f };
 	float TransformRotae[3] = { 0.0f, 3.14f, 0.0f };
@@ -1496,6 +1503,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//解放
 	CloseHandle(fenceEvent);
 	delete input;
+	delete dxCommon;
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
