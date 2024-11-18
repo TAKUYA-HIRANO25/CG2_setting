@@ -36,6 +36,10 @@ public:
 	/// SRVのしてh番号のGPUデスクリプタハンドルを取得する
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
+	void PreDraw();
+
+	void PostDrow();
+
 private:
 	/// デバイスの初期化
 	void DeviceInitialize();
@@ -126,4 +130,9 @@ private:
 	// シザー矩形
 	D3D12_RECT scissorRect{};
 
+	// フェンス
+	uint64_t fenceValue = 0;
+
+	// TransitionBarrierの設定
+	D3D12_RESOURCE_BARRIER barrier{};
 };

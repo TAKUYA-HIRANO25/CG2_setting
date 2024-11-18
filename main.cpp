@@ -1421,7 +1421,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::Render();
 			//画面色変更
 #pragma region
-			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+			/*UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 			//TransitionBarrier
 			D3D12_RESOURCE_BARRIER barrier{};
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -1429,14 +1429,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			commandList->ResourceBarrier(1, &barrier);
+			commandList->ResourceBarrier(1, &barrier);*/
 			//画面色変更 RTV DSv
 			//commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
-			float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
+			/*float clearColor[] = {0.1f,0.25f,0.5f,1.0f};
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 			commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
 			commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
-			commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+			commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);*/
+			dxCommon->PreDraw();
+			
 			//imguiの描画
 			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptoHeap.Get()};
 			commandList->SetDescriptorHeaps(1, descriptorHeaps);
@@ -1478,7 +1480,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 			
 			//リソースバリアを張る
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			/*barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			commandList->ResourceBarrier(1, &barrier);
 			//画面色変更
@@ -1496,7 +1498,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			hr = commandAllocator->Reset();
 			assert(SUCCEEDED(hr));
 			hr = commandList->Reset(commandAllocator.Get(), nullptr);
-			assert(SUCCEEDED(hr));
+			assert(SUCCEEDED(hr));*/
+			dxCommon->PostDrow();
 #pragma endregion
 		}
 	}
