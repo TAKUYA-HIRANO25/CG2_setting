@@ -13,6 +13,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <wrl.h>
+#include <random>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -57,10 +58,15 @@ struct VertexData
 	Vector3 normal;
 
 };
-struct Transform {
+struct TransformS {
 	Vector3 scale;
 	Vector3 rotate;
-	Vector3 transform;
+	Vector3 translate;
+};
+struct Particle {
+	TransformS transform;
+	Vector3 velocity;
+	Vector4 color;
 };
 struct Material
 {
@@ -73,6 +79,11 @@ struct TransformationMatrix
 {
 	Matrix4x4 WVP;
 	Matrix4x4 World;
+};
+struct ParticleForGPU {
+	Matrix4x4 WVP;
+	Matrix4x4 World;
+	Vector4 color;
 };
 struct DirectiomalLight {
 	Vector4 color;
@@ -523,12 +534,6 @@ Vector3 Normalize(const Vector3& v) {
 	result.z = v.z / length;
 	return result;
 }
-//Transform
-struct TransformS {
-	Vector3 scale;
-	Vector3 rotate;
-	Vector3 translate;
-};
 TransformS transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 TransformS cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 //ウィンドウ
@@ -686,6 +691,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResourece(Microsoft::WRL::Co
 		nullptr, IID_PPV_ARGS(&resource));
 	assert(SUCCEEDED(hr));
 	return resource;
+}
+//パーティクル
+Particle MakeNewPaticle(std::mt19937& randomEngine) {
+	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+	Particle particle;
+	particle.transform.scale = { 1.0f,1.0f,1.0f };
+	particle.transform.rotate = { 0.0f,3.14f,0.0f };
+	particle.transform.translate = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
+	particle.velocity = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
+	particle.color = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine), 1.0f };
+	return particle;
 }
 //リソースのデータ転送
 [[nodiscard]]
@@ -1252,7 +1268,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	*transformationMatrixDataSprite = MakeIdentity4x4();
 	//CPU用Transform
-	struct Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
+	struct TransformS transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
 
 	//マテリアルリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreatBufferResource(device.Get(), sizeof(Material));
@@ -1263,7 +1279,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialDataSprite->uvTransform = MakeIdentity4x4();
 
 	//WVPスプライト用
-	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.transform);
+	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
 	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 	Matrix4x4 worldViewProjectionMatrixSorite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
@@ -1295,14 +1311,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const uint32_t kNumInstance = 10;
 	// Instance用のTransformationMatrixリソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource =
-	CreatBufferResource(device, sizeof(TransformationMatrix) * kNumInstance);
+	CreatBufferResource(device, sizeof(ParticleForGPU) * kNumInstance);
 	// 書き込むためのアドレスを取得
-	TransformationMatrix* instancingData = nullptr;
+	ParticleForGPU* instancingData = nullptr;
 	instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
 	// 単位行列を書き込んでおく
 	for (uint32_t index = 0; index < kNumInstance; ++index) {
 		instancingData[index].WVP = MakeIdentity4x4();
 		instancingData[index].World = MakeIdentity4x4();
+		instancingData[index].color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC instancingSrvDesc{};
@@ -1312,16 +1329,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	instancingSrvDesc.Buffer.FirstElement = 0;
 	instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 	instancingSrvDesc.Buffer.NumElements = kNumInstance;
-	instancingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
+	instancingSrvDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
 	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
 	device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc, instancingSrvHandleCPU);
 
-	struct Transform transforms[kNumInstance];
+	struct Particle particle[kNumInstance];
 	for (uint32_t index = 0; index < kNumInstance; ++index) {
-		transforms[index].scale = { 1.0f,1.0f,1.0f };
-		transforms[index].rotate = { 0.0f,3.14f,0.0f };
-		transforms[index].transform = { index * 0.1f,index * 0.1f,index * 0.1f };
+		particle[index].transform.scale = { 1.0f,1.0f,1.0f };
+		particle[index].transform.rotate = { 0.0f,3.14f,0.0f };
+		particle[index].transform.translate = { index * 0.1f,index * 0.1f,index * 0.1f };
+		particle[index].velocity = { 0.0f,1.0f,0.0f };
 	}
 
 #pragma endregion
@@ -1357,7 +1375,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->intensity = 1.0f;
 
 	//スフィア用Transform
-	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
+	struct TransformS transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
 
 	//スフィア用インデックス
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSphere = CreatBufferResource(device.Get(), sizeof(uint32_t) * 6);
@@ -1435,12 +1453,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
 	float MaterialColor[4] = { 1.0f,1.0f,1.0f,1.0f };
 	//uvTransform
-	struct Transform uvTransformSprite {
+	struct TransformS uvTransformSprite {
 		{ 1.0f, 1.0f, 1.0f },
 		{ 0.0f,0.0f,0.0f },
 		{ 0.0f,0.0f,0.0f },
 	};
 	bool useMonsterball = false;
+	const float kDeltaTime = 1.0f / 60.0f;
+	//乱数
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+	for (uint32_t index = 0; index < kNumInstance; index++) {
+		particle[index] = MakeNewPaticle(randomEngine);
+	}
 #pragma endregion
 	MSG msg{};
 	//ゲーム処理
@@ -1479,7 +1504,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//uvTransform
 			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
-			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.transform));
+			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
 			materialDataSprite->uvTransform = uvTransformMatrix;
 
 
@@ -1494,9 +1519,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			wvpData->WVP = worldViewProjectionMatrix;
 			wvpData->World = worldMatrix;
 
-			//球の３次元化 WVPスフィア用
+			//球の３次元化 WVPスフィア用translate
 			transformSphere.rotate.y += 0.03f;
-			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.transform);
+			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
@@ -1506,11 +1531,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//パーティクル
 			for (uint32_t index = 0; index < kNumInstance; index++) {
-				Matrix4x4 worldmatrix = MakeAffineMatrix(transforms[index].scale, transforms[index].rotate, transforms[index].transform);
+				Matrix4x4 worldmatrix = MakeAffineMatrix(particle[index].transform.scale, particle[index].transform.rotate, particle[index].transform.translate);
 				Matrix4x4 worldViewProjectionMatrix = Multiply(worldmatrix,Multiply(viewMatrix,projectionMatrix));
 				instancingData[index].WVP = worldViewProjectionMatrix;
 				instancingData[index].World = worldmatrix;
-			
+				instancingData[index].color = particle[index].color;
+				particle[index].transform.translate.x += particle[index].velocity.x * kDeltaTime;
+				particle[index].transform.translate.y += particle[index].velocity.y * kDeltaTime;
+				particle[index].transform.translate.z += particle[index].velocity.z * kDeltaTime;
 			}
 			//画面色変更
 #pragma region

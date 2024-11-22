@@ -43,8 +43,8 @@ PixelshaderOutput main(VertexShaderOutput input)
     {
         float NdotL = dot(normalize(input.normal), -gDirectiomalLight.direction);
         float cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
-        output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectiomalLight.color.rgb * cos * gDirectiomalLight.intensity;
-        output.color.a = gMaterial.color.a * textureColor.a;
+        output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectiomalLight.color.rgb * cos * gDirectiomalLight.intensity * input.color.rgb;
+        output.color.a = gMaterial.color.a * textureColor.a * input.color.a;
 
     }
     else
