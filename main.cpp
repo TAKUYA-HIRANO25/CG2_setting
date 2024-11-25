@@ -100,7 +100,10 @@ Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result{};
 	for (int I = 0; I < 4; I++) {
 		for (int J = 0; J < 4; J++) {
-			result.m[I][J] = m1.m[I][0] * m2.m[0][J] + m1.m[I][1] * m2.m[1][J] + m1.m[I][2] * m2.m[2][J] + m1.m[I][3] * m2.m[3][J];
+			for (int K = 0; K < 4; K++)
+			{
+				result.m[I][J] += m1.m[I][K] * m2.m[K][J];
+			}			
 		}
 	}
 	return result;
@@ -910,9 +913,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 
 			dxCommon->PreDraw();
-			
-			//imguiの描画
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 
 
 
