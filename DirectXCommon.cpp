@@ -25,6 +25,137 @@ void DirectXCommon::Initialize(WinApp* winApp)
 
 }
 
+Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile)
+{
+	Logger::Log(StringUtility::ConvertString(std::format(L"Begin CompilerShader, path:{}, profile:{}\n", filePath, profile)));
+	//hlsファイル読み込み
+	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
+	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	assert(SUCCEEDED(hr));
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
+	//Compileする
+	LPCWSTR arguments[] = {
+		filePath.c_str(),
+		L"-E", L"main",
+		L"-T", profile,
+		L"-Zi", L"-Qembed_debug",
+		L"-Od",
+		L"-Zpr",
+	};
+	Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
+	hr = dxcCompiler->Compile(&shaderSourceBuffer, arguments, _countof(arguments),
+		includeHandler.Get(), IID_PPV_ARGS(&shaderResult));
+	assert(SUCCEEDED(hr));
+	//警告　エラーが出ているか確認
+	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
+	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+		Logger::Log(shaderError->GetStringPointer());
+		assert(false);
+	}
+	//Compile結果を受け取って返す
+	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
+	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+	assert(SUCCEEDED(hr));
+	Logger::Log(StringUtility::ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
+	return shaderBlob;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes)
+{
+	// ピープの設定
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	// リソースの設定
+	D3D12_RESOURCE_DESC vertexResourceDesc{};
+	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	vertexResourceDesc.Width = sizeInBytes;
+	// バッファリソース。テクスチャの場合はまた別の設定をする
+	vertexResourceDesc.Height = 1;
+	vertexResourceDesc.DepthOrArraySize = 1;
+	vertexResourceDesc.MipLevels = 1;
+	vertexResourceDesc.SampleDesc.Count = 1;
+	// バッファ
+	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	// リソースを作る
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	assert(SUCCEEDED(hr));
+	return vertexResource;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResourece(Microsoft::WRL::ComPtr<ID3D12Device> device, const DirectX::TexMetadata& metadata)
+{
+	//リソース設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = UINT(metadata.width);
+	resourceDesc.Height = UINT(metadata.height);
+	resourceDesc.MipLevels = UINT16(metadata.mipLevels);
+	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);
+	resourceDesc.Format = metadata.format;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);
+	//利用するHeap
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	//リソース生成
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(
+		&heapProperties, D3D12_HEAP_FLAG_NONE,
+		&resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr, IID_PPV_ARGS(&resource));
+	assert(SUCCEEDED(hr));
+	return resource;
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages)
+{
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	DirectX::PrepareUpload(device.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subresources.size()));
+	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
+	UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	//Tetureへの転送後利用できるように変更する
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = texture.Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	commandList->ResourceBarrier(1, &barrier);
+	return intermediateResource;
+
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel) {
+		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
+		HRESULT hr = texture->WriteToSubresource(
+			UINT(mipLevel), nullptr,
+			img->pixels, UINT(img->rowPitch),
+			UINT(img->slicePitch)
+		);
+		assert(SUCCEEDED(hr));
+	}
+}
+
+DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath)
+{
+	DirectX::ScratchImage image{};
+	std::wstring filePathw = StringUtility::ConvertString(filePath);
+	HRESULT hr = DirectX::LoadFromWICFile(filePathw.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	assert(SUCCEEDED(hr));
+	DirectX::ScratchImage mipImages{};
+	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+	assert(SUCCEEDED(hr));
+	return mipImages;
+}
+
 void DirectXCommon::PreDraw()
 {
 	// 書き込むバックバッファのインデックスの取得
@@ -337,15 +468,12 @@ void DirectXCommon::DXCInitialize()
 	HRESULT hr;
 
 	// dxcCompilerを初期化
-	IDxcUtils* dxcUtils = nullptr;
-	IDxcCompiler3* dxcCompiler = nullptr;
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
 	assert(SUCCEEDED(hr));
 	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
 	assert(SUCCEEDED(hr));
 
 	// includeに対応するための設定
-	IDxcIncludeHandler* includeHandler = nullptr;
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	assert(SUCCEEDED(hr));
 }

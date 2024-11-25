@@ -9,6 +9,9 @@
 #include <dxcapi.h>
 #include "StringUility.h"
 #include "Logger.h"
+#include "externals/DirectXTex/DirectXTex.h"
+#include "externals/DirectXTex//d3dx12.h"
+#include <vector>
 #pragma comment (lib, "d3d12.lib")
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "dxcompiler.lib")
@@ -35,6 +38,25 @@ public:
 
 	/// SRVのしてh番号のGPUデスクリプタハンドルを取得する
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+	
+	//ゲッター
+	Microsoft::WRL::ComPtr<ID3D12Device> GetDevice() const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
+
+	// シェーダーコンパイル
+	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath,const wchar_t* profile);
+
+	/// バッファリソースの生成
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+	
+	//テクスチャーリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResourece(Microsoft::WRL::ComPtr<ID3D12Device> device, const DirectX::TexMetadata& metadata);
+	
+	//リソースのデータ転送
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
+
+	//テクスチャー関数
+	DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
 	void PreDraw();
 
@@ -135,4 +157,9 @@ private:
 
 	// TransitionBarrierの設定
 	D3D12_RESOURCE_BARRIER barrier{};
+
+	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
+	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler;
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler;
+
 };
