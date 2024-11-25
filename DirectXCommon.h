@@ -12,6 +12,7 @@
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex//d3dx12.h"
 #include <vector>
+#include <chrono>
 #pragma comment (lib, "d3d12.lib")
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "dxcompiler.lib")
@@ -99,6 +100,13 @@ private:
 	/// ImGuiの生成
 	void ImGuiInitialize();
 
+	// 記録時間
+	std::chrono::steady_clock::time_point reference_;
+
+	// FPS固定初期化
+	void InitialiseFixFPS();
+	/// FPS固定更新
+	void UpdateFixFPS();
 private:
 	// DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device;

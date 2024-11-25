@@ -1,13 +1,15 @@
 #pragma once
 #include "DirectXCommon.h"
 #include <cassert>
-
+#include <thread>
 using namespace Microsoft::WRL;
 
 void DirectXCommon::Initialize(WinApp* winApp)
 {
 	assert(winApp);
 	
+	InitialiseFixFPS();
+
 	this->winApp = winApp;
 
 	DeviceInitialize();
@@ -223,6 +225,8 @@ void DirectXCommon::PostDrow()
 		// イベントを待つ
 		WaitForSingleObject(fenceEvent, INFINITE);
 	}
+
+	UpdateFixFPS();
 
 	// 次のフレーム用のコマンドリストを準備
 	hr = commandAllocator->Reset();
@@ -487,6 +491,37 @@ void DirectXCommon::ImGuiInitialize()
 	ImGui_ImplDX12_Init(device.Get(),swapChainDesc.BufferCount,rtvDesc.Format,
 		srvDescriptorHeap.Get(),srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+}
+
+void DirectXCommon::InitialiseFixFPS()
+{
+	// 現在時間を記録する
+	reference_ = std::chrono::steady_clock::now();
+}
+
+void DirectXCommon::UpdateFixFPS()
+{
+	// 1/60秒ぴったりの時間
+	const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.0f));
+	// 1/60秒よりわすかに短い時間
+	const std::chrono::microseconds kMinCheckTime(uint64_t(1000000.0f / 65.0f));
+
+	// 現在時間を取得する
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	// 前回記録からの経過時間を取得する
+	std::chrono::microseconds elapsep =
+		std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
+
+	// 1/60秒（よりわずかに短い時間）経っていない場合
+	if (elapsep < kMinCheckTime) {
+		// 1/60秒経過するまで微小なスリープを繰り返す
+		while (std::chrono::steady_clock::now() - reference_ < kMinTime) {
+			// 1マイク秒スリープ
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+		}
+	}
+	// 現在の時間を記録する
+	reference_ = std::chrono::steady_clock::now();
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const int32_t& width, const int32_t& height)

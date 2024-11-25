@@ -1,6 +1,6 @@
 #include "WinApp.h"
 #include <cassert>
-
+#pragma comment(lib, "winmm.lib")
 
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -67,6 +67,8 @@ void WinApp::Initialize()
 	);
 
 	ShowWindow(hwnd, SW_SHOW);
+
+	timeBeginPeriod(1);
 
 }
 

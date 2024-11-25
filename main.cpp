@@ -1,9 +1,5 @@
 #include <cmath>
 #include <cassert>
-#include <dxgidebug.h>
-#include <dxcapi.h>
-#include "externals/DirectXTex//DirectXTex.h"
-#include "externals/DirectXTex//d3dx12.h"
 #include <vector>
 #include <fstream>
 #include <sstream>
