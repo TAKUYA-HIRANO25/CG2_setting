@@ -67,6 +67,8 @@ struct Particle {
 	TransformS transform;
 	Vector3 velocity;
 	Vector4 color;
+	float lifeTime;
+	float currentTime;
 };
 struct Material
 {
@@ -694,6 +696,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResourece(Microsoft::WRL::Co
 }
 //パーティクル
 Particle MakeNewPaticle(std::mt19937& randomEngine) {
+	std::uniform_real_distribution<float> distTime(1.0f,3.0f);
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	Particle particle;
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
@@ -701,6 +704,8 @@ Particle MakeNewPaticle(std::mt19937& randomEngine) {
 	particle.transform.translate = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
 	particle.velocity = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
 	particle.color = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine), 1.0f };
+	particle.lifeTime = distTime(randomEngine);
+	particle.currentTime = 0;
 	return particle;
 }
 //リソースのデータ転送
@@ -975,7 +980,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 
 	//読み込み2
-	DirectX::ScratchImage mipImages2 = LoadTexture("resources/monsterBall.png");
+	DirectX::ScratchImage mipImages2 = LoadTexture("resources/circle.png");
 	const DirectX::TexMetadata& metadata2 = mipImages2.GetMetadata();
 	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource2 = CreateTextureResourece(device.Get(), metadata2);
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource2 = UploadTextureData(textureResource2.Get(), mipImages2, device, commandList.Get());
@@ -1308,15 +1313,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//Instancing用リソース
 #pragma region
-	const uint32_t kNumInstance = 10;
+	const uint32_t kNumMaxInstance = 10;
 	// Instance用のTransformationMatrixリソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource =
-	CreatBufferResource(device, sizeof(ParticleForGPU) * kNumInstance);
+	CreatBufferResource(device, sizeof(ParticleForGPU) * kNumMaxInstance);
 	// 書き込むためのアドレスを取得
 	ParticleForGPU* instancingData = nullptr;
 	instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&instancingData));
 	// 単位行列を書き込んでおく
-	for (uint32_t index = 0; index < kNumInstance; ++index) {
+	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
 		instancingData[index].WVP = MakeIdentity4x4();
 		instancingData[index].World = MakeIdentity4x4();
 		instancingData[index].color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1328,14 +1333,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	instancingSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	instancingSrvDesc.Buffer.FirstElement = 0;
 	instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	instancingSrvDesc.Buffer.NumElements = kNumInstance;
+	instancingSrvDesc.Buffer.NumElements = kNumMaxInstance;
 	instancingSrvDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
 	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
 	device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc, instancingSrvHandleCPU);
 
-	struct Particle particle[kNumInstance];
-	for (uint32_t index = 0; index < kNumInstance; ++index) {
+	struct Particle particle[kNumMaxInstance];
+	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
 		particle[index].transform.scale = { 1.0f,1.0f,1.0f };
 		particle[index].transform.rotate = { 0.0f,3.14f,0.0f };
 		particle[index].transform.translate = { index * 0.1f,index * 0.1f,index * 0.1f };
@@ -1402,7 +1407,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
@@ -1463,7 +1468,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//乱数
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
-	for (uint32_t index = 0; index < kNumInstance; index++) {
+	for (uint32_t index = 0; index < kNumMaxInstance; index++) {
 		particle[index] = MakeNewPaticle(randomEngine);
 	}
 #pragma endregion
@@ -1530,7 +1535,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::Render();
 
 			//パーティクル
-			for (uint32_t index = 0; index < kNumInstance; index++) {
+			uint32_t numInstance = 0;
+			for (uint32_t index = 0; index < kNumMaxInstance; index++) {
+				if (particle[index].lifeTime <= particle[index].currentTime) {
+					continue;
+				}
 				Matrix4x4 worldmatrix = MakeAffineMatrix(particle[index].transform.scale, particle[index].transform.rotate, particle[index].transform.translate);
 				Matrix4x4 worldViewProjectionMatrix = Multiply(worldmatrix,Multiply(viewMatrix,projectionMatrix));
 				instancingData[index].WVP = worldViewProjectionMatrix;
@@ -1539,6 +1548,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				particle[index].transform.translate.x += particle[index].velocity.x * kDeltaTime;
 				particle[index].transform.translate.y += particle[index].velocity.y * kDeltaTime;
 				particle[index].transform.translate.z += particle[index].velocity.z * kDeltaTime;
+				particle[index].currentTime += kDeltaTime;
+				float alpha= 1.0f - (particle[index].currentTime / particle[index].lifeTime);
+				instancingData[index].color.w = alpha;
+				++numInstance;
 			}
 			//画面色変更
 #pragma region
@@ -1580,7 +1593,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//commandList->SetGraphicsRootDescriptorTable(4, texturSrvHandleGPU3);
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			commandList->DrawInstanced(UINT(modeData.vertices.size()), kNumInstance, 0, 0);
+			commandList->DrawInstanced(UINT(modeData.vertices.size()), numInstance, 0, 0);
 
 			//スフィア描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
