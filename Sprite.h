@@ -56,4 +56,3 @@ private:
 	D3D12_INDEX_BUFFER_VIEW indexBufferView;
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU;
 };
-};
