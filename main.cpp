@@ -5,6 +5,7 @@
 #include <sstream>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "MyMath.h"
 #include "Input.h"
 #include "WinApp.h"
 #include "DirectXCommon.h"
@@ -16,18 +17,6 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-struct Material
-{
-	Vector4 color;
-	int32_t enableLighting;
-	float padding[3];
-	Matrix4x4 uvTransform;
-};
-struct TransformationMatrix
-{
-	Matrix4x4 WVP;
-	Matrix4x4 World;
-};
 struct DirectiomalLight {
 	Vector4 color;
 	Vector3 direction;
@@ -37,17 +26,16 @@ struct MaterialData {
 	std::string textureFilePath;
 };
 struct ModelData {
-	std::vector<VertexData> vertices;
+	std::vector<Sprite::VertexData> vertices;
 	MaterialData material;
 };
-
 //球
 struct Sphere {
 	Vector3 center;
 	float radius;
 };
 //球
-void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
+void DrawSphere(Sprite::VertexData* vertexData, uint32_t Subdivision) {
 	const uint32_t kSubdivision = Subdivision;
 	const float kLonEvery = float(M_PI) * 2.0f / float(kSubdivision);//経度 φ
 	const float kLatEvery = float(M_PI) / float(kSubdivision);	//緯度 θ
@@ -60,7 +48,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
 			float lon = lonIndex * kLonEvery;//φ
 
 			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-			VertexData vertA = {
+			Sprite::VertexData vertA = {
 				{
 					cos(lat) * cos(lon) ,
 					sin(lat),
@@ -74,7 +62,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
 					cos(lat) * sin(lon),
 				},
 			};
-			VertexData vertB = {
+			Sprite::VertexData vertB = {
 				{
 					cos(lat + kLatEvery) * cos(lon) ,
 					sin(lat + kLatEvery),
@@ -88,7 +76,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
 					cos(lat + kLatEvery) * sin(lon),
 				} ,
 			};
-			VertexData vertC = {
+			Sprite::VertexData vertC = {
 				{
 					cos(lat) * cos(lon + kLonEvery) ,
 					sin(lat),
@@ -102,7 +90,7 @@ void DrawSphere(VertexData* vertexData, uint32_t Subdivision) {
 					cos(lat) * sin(lon + kLonEvery),
 				},
 			};
-			VertexData vertD = {
+			Sprite::VertexData vertD = {
 				{
 					cos(lat + kLatEvery) * cos(lon + kLonEvery),
 					sin(lat + kLatEvery),
@@ -190,7 +178,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 			normals.push_back(normal);
 		}
 		else if (identifier == "f") {
-			VertexData triangle[3];
+			Sprite::VertexData triangle[3];
 			//三角形を作る
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDifinition;
@@ -237,13 +225,8 @@ Vector3 Normalize(const Vector3& v) {
 	return result;
 }
 //Transform
-struct TransformS {
-	Vector3 scale;
-	Vector3 rotate;
-	Vector3 translate;
-};
-TransformS transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-TransformS cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+Sprite::Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+Sprite::Transform cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakChek;
@@ -272,88 +255,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	SpriteCommon* spriteCommon;
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
-#pragma endregion
-	//ルートシグネチャの生成
-#pragma region
-	/*D3D12_DESCRIPTOR_RANGE descriputorRange[1] = {};
-	descriputorRange[0].BaseShaderRegister = 0;
-	descriputorRange[0].NumDescriptors = 1;
-	descriputorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descriputorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
-	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[0].Descriptor.ShaderRegister = 0;
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-	rootParameters[1].Descriptor.ShaderRegister = 0;
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriputorRange;
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriputorRange);
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[3].Descriptor.ShaderRegister = 1;
-	desriptionRootSignature.pParameters = rootParameters;
-	desriptionRootSignature.NumParameters = _countof(rootParameters);
-	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
-	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
-	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-	staticSamplers[0].ShaderRegister = 0;
-	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	desriptionRootSignature.pStaticSamplers = staticSamplers;
-	desriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
-
-	HRESULT hr;
-
-	hr = D3D12SerializeRootSignature(&desriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1,
-		&signatureBlob, &errorBlob);
-	if (FAILED(hr)) {
-		Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-		assert(false);
-	}
-
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
-	hr = dxCommon->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(),
-		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
-	assert(SUCCEEDED(hr));
-
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	inputElementDescs[2].SemanticName = "NORMAL";
-	inputElementDescs[2].SemanticIndex = 0;
-	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	D3D12_INPUT_LAYOUT_DESC inputLayoutDescs{};
-	inputLayoutDescs.pInputElementDescs = inputElementDescs;
-	inputLayoutDescs.NumElements = _countof(inputElementDescs);
-	D3D12_BLEND_DESC blendDesc{};
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0");
-	assert(vertexShaderBlob != nullptr);
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlod = dxCommon->CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0");
-	assert(pixelShaderBlod != nullptr);*/
-
-
+	Sprite* sprite;
+	sprite = new Sprite;
+	sprite->Initialize(spriteCommon);
 #pragma endregion
 	//頂点リソース作成
 #pragma region
@@ -443,11 +347,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	*transformationMatrixDataSprite = MakeIdentity4x4();
 	//CPU用Transform
-	struct Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
+	struct Sprite::Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
 
 	//マテリアルリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource( sizeof(Material));
-	Material* materialDataSprite = nullptr;
+	Sprite::Material* materialDataSprite = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialDataSprite->enableLighting = 1;
@@ -510,7 +414,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->intensity = 1.0f;
 
 	//スフィア用Transform
-	struct Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
+	struct Sprite::Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
 
 	//スフィア用インデックス
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSphere = dxCommon->CreateBufferResource( sizeof(uint32_t) * 6);
@@ -560,7 +464,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float TransformTranslate[3] = { 0.0f,0.0f,0.0f };
 	float directionalLight[3] = { 0.0f,-1.0f,0.0f };
 	//uvTransform
-	struct Transform uvTransformSprite {
+	struct Sprite::Transform uvTransformSprite {
 		{ 1.0f, 1.0f, 1.0f },
 		{ 0.0f,0.0f,0.0f },
 		{ 0.0f,0.0f,0.0f },
