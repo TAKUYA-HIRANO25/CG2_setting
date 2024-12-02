@@ -549,9 +549,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input = new Input();
 	input->Initialize(winApp);
 #pragma endregion
+	//スプライト
+#pragma region
+	SpriteCommon* spriteCommon;
+	spriteCommon = new SpriteCommon;
+	spriteCommon->Initialize(dxCommon);
+#pragma endregion
 	//ルートシグネチャの生成
 #pragma region
-	D3D12_DESCRIPTOR_RANGE descriputorRange[1] = {};
+	/*D3D12_DESCRIPTOR_RANGE descriputorRange[1] = {};
 	descriputorRange[0].BaseShaderRegister = 0;
 	descriputorRange[0].NumDescriptors = 1;
 	descriputorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -627,7 +633,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0");
 	assert(vertexShaderBlob != nullptr);
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlod = dxCommon->CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0");
-	assert(pixelShaderBlod != nullptr);
+	assert(pixelShaderBlod != nullptr);*/
 
 
 #pragma endregion
