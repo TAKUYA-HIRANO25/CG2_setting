@@ -1537,14 +1537,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			billboardMatrix.m[3][1] = 0.0f;
 			billboardMatrix.m[3][2] = 0.0f;
 			Matrix4x4 worldMatrix;
-			if (useBillboard == true) {
-				Matrix4x4 scaleMatrix = MakeScalematrix(transform.scale);
-				Matrix4x4 transformMatrix = MakeTranslateMatrix(transform.translate);
-				worldMatrix = scaleMatrix * billboardMatrix * transformMatrix
+			if (useBillboard == false) {
+				billboardMatrix = MakeIdentity4x4();
 			}
-			else {
-				worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			}
+			Matrix4x4 scaleMatrix = MakeScalematrix(transform.scale);
+			Matrix4x4 transformMatrix = MakeTranslateMatrix(transform.translate);
+			worldMatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), transformMatrix);
+			//worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 mulViewProjection = Multiply(viewMatrix, projectionMatrix);
