@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <cstdint>
 #include <string>
+#include <numbers>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <cassert>
@@ -536,8 +537,16 @@ Vector3 Normalize(const Vector3& v) {
 	result.z = v.z / length;
 	return result;
 }
-TransformS transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-TransformS cameraTransfprm{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+TransformS transform{ 
+	{1.0f,1.0f,1.0f},
+	{0.0f,0.0f,0.0f},
+	{0.0f,0.0f,0.0f} 
+};
+TransformS cameraTransfprm{ 
+	{1.0f,1.0f,1.0f},
+	{std::numbers::pi_v<float> / 3.0f, std::numbers::pi_v<float>,0.0f},
+	{0.0f,23.0f,10.0f} 
+};
 //ウィンドウ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
@@ -1464,6 +1473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ 0.0f,0.0f,0.0f },
 	};
 	bool useMonsterball = false;
+	bool useBillboard = false;
 	const float kDeltaTime = 1.0f / 60.0f;
 	//乱数
 	std::random_device seedGenerator;
@@ -1488,6 +1498,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::NewFrame();
 			//ImGui::ShowDemoWindow();
 			ImGui::Checkbox("useMonsterBall", &useMonsterball);
+			ImGui::Checkbox("useBillboard", &useBillboard);
 			ImGui::DragFloat4("materialData", materialDataVector);
 			ImGui::DragFloat3("Scale", TransformScale);
 			ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
@@ -1512,11 +1523,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
 			materialDataSprite->uvTransform = uvTransformMatrix;
 
+			//ビルボード;
+#pragma region
+			Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(std::numbers::pi_v<float>);
+#pragma endregion
 
 			//三角形３次元化
 			//transform.rotate.y += 0.03f;
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransfprm.scale, cameraTransfprm.rotate, cameraTransfprm.translate);
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			//ビルボード
+			Matrix4x4 billboardMatrix = Multiply(backToFrontMatrix, cameraMatrix);
+			billboardMatrix.m[3][0] = 0.0f;
+			billboardMatrix.m[3][1] = 0.0f;
+			billboardMatrix.m[3][2] = 0.0f;
+			Matrix4x4 worldMatrix;
+			if (useBillboard == true) {
+				Matrix4x4 scaleMatrix = MakeScalematrix(transform.scale);
+				Matrix4x4 transformMatrix = MakeTranslateMatrix(transform.translate);
+				worldMatrix = scaleMatrix * billboardMatrix * transformMatrix
+			}
+			else {
+				worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			}
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 mulViewProjection = Multiply(viewMatrix, projectionMatrix);
