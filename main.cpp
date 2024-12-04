@@ -700,7 +700,7 @@ Particle MakeNewPaticle(std::mt19937& randomEngine) {
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	Particle particle;
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
-	particle.transform.rotate = { 0.0f,3.14f,0.0f };
+	particle.transform.rotate = { 0.0f,0.0f,0.0f };
 	particle.transform.translate = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
 	particle.velocity = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
 	particle.color = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine), 1.0f };
@@ -1207,7 +1207,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	vertexData[2].normal = { 0.0f,0.0f,-1.0f };
 
-	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };//左下２
+	/*vertexData[3].position = {-0.5f,-0.5f,0.5f,1.0f};//左下２
 	vertexData[3].texcoord = { 0.0f,1.0f };
 	vertexData[3].normal = { 0.0f,0.0f,-1.0f };
 
@@ -1217,7 +1217,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };//右下２
 	vertexData[5].texcoord = { 1.0f,1.0f };
-	vertexData[5].normal = { 0.0f,0.0f,-1.0f };
+	vertexData[5].normal = { 0.0f,0.0f,-1.0f };*/
 
 	//std::memcpy(vertexData, modeData.vertices.data(), sizeof(VertexData) * modeData.vertices.size());
 
