@@ -709,7 +709,7 @@ Particle MakeNewPaticle(std::mt19937& randomEngine) {
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	Particle particle;
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
-	particle.transform.rotate = { 0.0f,3.14f,0.0f };
+	particle.transform.rotate = { 0.0f, 3.14f,0.0f };
 	particle.transform.translate = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
 	particle.velocity = {0, 0 , 0 };
 	particle.color = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine), 1.0f };
@@ -1542,8 +1542,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			Matrix4x4 scaleMatrix = MakeScalematrix(transform.scale);
 			Matrix4x4 transformMatrix = MakeTranslateMatrix(transform.translate);
-			worldMatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), transformMatrix);
-			//worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 mulViewProjection = Multiply(viewMatrix, projectionMatrix);
@@ -1559,6 +1558,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
 			transformationMatrixDataSphere->World = worldMatrixSphere;
+			
 			ImGui::Render();
 
 			//パーティクル
@@ -1567,7 +1567,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (particle[index].lifeTime <= particle[index].currentTime) {
 					continue;
 				}
-				Matrix4x4 worldmatrix = MakeAffineMatrix(particle[index].transform.scale, particle[index].transform.rotate, particle[index].transform.translate);
+				Matrix4x4 worldmatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), transformMatrix);
 				Matrix4x4 worldViewProjectionMatrix = Multiply(worldmatrix,Multiply(viewMatrix,projectionMatrix));
 				instancingData[index].WVP = worldViewProjectionMatrix;
 				instancingData[index].World = worldmatrix;
