@@ -705,13 +705,13 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResourece(Microsoft::WRL::Co
 }
 //パーティクル
 Particle MakeNewPaticle(std::mt19937& randomEngine) {
-	std::uniform_real_distribution<float> distTime(1.0f,3.0f);
+	std::uniform_real_distribution<float> distTime(10.0f,20.0f);
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	Particle particle;
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
-	particle.transform.rotate = { 0.0f,0.0f,0.0f };
+	particle.transform.rotate = { 0.0f,3.14f,0.0f };
 	particle.transform.translate = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
-	particle.velocity = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine) };
+	particle.velocity = {0, 0 , 0 };
 	particle.color = { distribution(randomEngine), distribution(randomEngine) , distribution(randomEngine), 1.0f };
 	particle.lifeTime = distTime(randomEngine);
 	particle.currentTime = 0;
@@ -1576,8 +1576,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				particle[index].transform.translate.y += particle[index].velocity.y * kDeltaTime;
 				particle[index].transform.translate.z += particle[index].velocity.z * kDeltaTime;
 				particle[index].currentTime += kDeltaTime;
-				float alpha= 1.0f - (particle[index].currentTime / particle[index].lifeTime);
-				instancingData[index].color.w = alpha;
+				//float alpha= 1.0f - (particle[index].currentTime / particle[index].lifeTime);
+				instancingData[index].color.w = 1.0f;
 				++numInstance;
 			}
 			//画面色変更
