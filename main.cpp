@@ -1451,7 +1451,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.top = 0;
 	scissorRect.bottom = kClientHeight;
 #pragma endregion
-	//デバッグ画面初期化
+	//デバッグ画面初期化 パーティクル
 #pragma region
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -1540,8 +1540,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (useBillboard == false) {
 				billboardMatrix = MakeIdentity4x4();
 			}
-			Matrix4x4 scaleMatrix = MakeScalematrix(transform.scale);
-			Matrix4x4 transformMatrix = MakeTranslateMatrix(transform.translate);
 			worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
@@ -1567,6 +1565,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				if (particle[index].lifeTime <= particle[index].currentTime) {
 					continue;
 				}
+				Matrix4x4 scaleMatrix = MakeScalematrix(particle[index].transform.scale);
+				Matrix4x4 transformMatrix = MakeTranslateMatrix(particle[index].transform.translate);
 				Matrix4x4 worldmatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), transformMatrix);
 				Matrix4x4 worldViewProjectionMatrix = Multiply(worldmatrix,Multiply(viewMatrix,projectionMatrix));
 				instancingData[index].WVP = worldViewProjectionMatrix;
