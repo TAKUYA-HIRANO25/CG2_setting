@@ -1516,7 +1516,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}*/
 			ImGui::DragFloat4("materialData", materialDataVector);
 			ImGui::DragFloat3("Scale", TransformScale);
-			ImGui::DragFloat3("EmitterTranslate", &emitter.transform.translate, 0.01f, -100.0f, 100.0f);
+			ImGui::DragFloat3("EmitterTranslate", &emitter.transform.translate.x, 0.01f, -100.0f, 100.0f);
 			ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
 			ImGui::DragFloat3("Translate", TransformTranslate);
 			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
