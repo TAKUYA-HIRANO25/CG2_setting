@@ -1525,7 +1525,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//ビルボード;
 #pragma region
-			Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(std::numbers::pi_v<float>);
+			Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(0.0f);
 #pragma endregion
 
 			//三角形３次元化
