@@ -273,6 +273,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_CPU_DESCRIPTOR_HANDLE texturSrvHandleCPU3 = dxCommon->GetSRVCPUDescriptorHandle(3);
 	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU3 = dxCommon->GetSRVGPUDescriptorHandle(3);
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource3.Get(), &srvDesc3, texturSrvHandleCPU3);
+
+	//読み込み2
+	DirectX::ScratchImage mipImages2 = dxCommon->LoadTexture("resources/monsterBall.png");
+	const DirectX::TexMetadata& metadata2 = mipImages2.GetMetadata();
+	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource2 = dxCommon->CreateTextureResourece(dxCommon->GetDevice(), metadata2);
+	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource2 = dxCommon->UploadTextureData(textureResource2.Get(), mipImages2);
+
+	//SRVの設定2
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc2{};
+	srvDesc2.Format = metadata2.format;
+	srvDesc2.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc2.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc2.Texture2D.MipLevels = UINT(metadata2.mipLevels);
+
+	//SRVの場所決め2
+	D3D12_CPU_DESCRIPTOR_HANDLE texturSrvHandleCPU2 = dxCommon->GetSRVCPUDescriptorHandle(2);
+	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU2 = dxCommon->GetSRVGPUDescriptorHandle(2);
+	dxCommon->GetDevice()->CreateShaderResourceView(textureResource2.Get(), &srvDesc2, texturSrvHandleCPU2);
+
+	//読み込み
+	DirectX::ScratchImage mipImages = dxCommon->LoadTexture("resources/uvChecker.png");
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreateTextureResourece(dxCommon->GetDevice(), metadata);
+	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = dxCommon->UploadTextureData(textureResource.Get(), mipImages);
+
+	//SRVの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = metadata.format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+
+	//SRVの場所決め
+	D3D12_CPU_DESCRIPTOR_HANDLE texturSrvHandleCPU = dxCommon->GetSRVCPUDescriptorHandle(1);
+	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU = dxCommon->GetSRVGPUDescriptorHandle(1);
+	dxCommon->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, texturSrvHandleCPU);
 #pragma endregion
 #pragma region
 	Sprite::TransformationMatrix* wvpData = nullptr;
