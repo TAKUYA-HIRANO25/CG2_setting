@@ -837,7 +837,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	HWND hwnd = CreateWindow(
 		wc.lpszClassName,
-		L"CG2",
+		L"LE2C_19_ヒラノ_タクヤ",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -1509,18 +1509,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			//ImGui::ShowDemoWindow();
-			ImGui::Checkbox("useMonsterBall", &useMonsterball);
+			//ImGui::Checkbox("useMonsterBall", &useMonsterball);
 			ImGui::Checkbox("useBillboard", &useBillboard);
 			/*if (ImGui::Button("Add Particle")) {
 				particles.splice(particles.end(), Emit(emitter, randomEngine));
 			}*/
-			ImGui::DragFloat4("materialData", materialDataVector);
-			ImGui::DragFloat3("Scale", TransformScale);
+			//ImGui::DragFloat4("materialData", materialDataVector);
+			//ImGui::DragFloat3("Scale", TransformScale);
 			ImGui::DragFloat3("EmitterTranslate", &emitter.transform.translate.x, 0.01f, -100.0f, 100.0f);
-			ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
-			ImGui::DragFloat3("Translate", TransformTranslate);
-			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
-			ImGui::ColorEdit4("color", MaterialColor );
+			//ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
+			//ImGui::DragFloat3("Translate", TransformTranslate);
+			//ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
+			//ImGui::ColorEdit4("color", MaterialColor );
 			//ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
 			//ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			//ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
