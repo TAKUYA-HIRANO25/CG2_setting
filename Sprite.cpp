@@ -48,16 +48,16 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 void Sprite::Update()
 {
 	// 頂点リソースにデータを書き込む
-	vertexData[0].position = { 0.0f,180.0f,0.0f,1.0f };// 左下
+	vertexData[0].position = { 0.0f,1.0f,0.0f,1.0f };// 左下
 	vertexData[0].texcoord = { 0.0f,1.0f };
 	vertexData[0].normal = { 0.0f,0.0f,-1.0f };
 	vertexData[1].position = { 0.0f,0.0f,0.0f,1.0f };// 左上
 	vertexData[1].texcoord = { 0.0f,0.0f };
 	vertexData[1].normal = { 0.0f,0.0f,-1.0f };
-	vertexData[2].position = { 320.0f,180.0f,0.0f,1.0f };// 右下
+	vertexData[2].position = { 1.0f,1.0f,0.0f,1.0f };// 右下
 	vertexData[2].texcoord = { 1.0f,1.0f };
 	vertexData[2].normal = { 0.0f,0.0f,-1.0f };
-	vertexData[3].position = { 320.0f,0.0f,0.0f,1.0f };// 右上
+	vertexData[3].position = { 1.0f,0.0f,0.0f,1.0f };// 右上
 	vertexData[3].texcoord = { 1.0f,0.0f };
 	vertexData[3].normal = { 0.0f,0.0f,-1.0f };
 
@@ -65,7 +65,10 @@ void Sprite::Update()
 	indexData[0] = 0;    indexData[1] = 1;    indexData[2] = 2;
 	indexData[3] = 1;    indexData[4] = 3;    indexData[5] = 2;
 
-	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	Transform transform;
+	transform.translate = { position.x,position.y ,0.0f };
+	transform.rotate = { 0.0f,0.0f,rotation };
+	transform.scale = { size.x,size.y,1.0f };
 	transformationMatrixData->World = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 viewMatrix = MakeIdentity4x4();
 	Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);

@@ -257,5 +257,18 @@ namespace MyMath {
 		return result;
 	}
 
+	float Length(const Vector3& v) {
+		float result;
+		result = sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+		return result;
+	}
 
+	Vector3 Normalize(const Vector3& v) {
+		float length = Length(v);
+		Vector3 result;
+		result.x = v.x / length;
+		result.y = v.y / length;
+		result.z = v.z / length;
+		return result;
+	}
 }
