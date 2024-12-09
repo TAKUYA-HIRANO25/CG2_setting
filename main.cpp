@@ -245,14 +245,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	for (uint32_t i = 0; i < 5; ++i) {
 		Sprite* sprite = new Sprite();
 		sprite->Initialize(spriteCommon);
-		Vector2 newPosition = { 0.0f, 0.0f };
+		Vector2 newPosition = { float(i * 180.0f), 0.0f};
 		sprite->SetPosition(newPosition);
 		sprites.push_back(sprite);
 	}
 #pragma endregion
 	//頂点リソース作成
 #pragma region
-	ModelData modeData = LoadObjFile("resources", "axis.obj");
+	ModelData modeData = LoadObjFile("resources", "plane.obj");
 #pragma endregion
 	//テクスチャー
 #pragma region
@@ -360,7 +360,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//インデックス
 #pragma region
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
+	/*Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
 	D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
 	indexBufferViewSprite.BufferLocation = indexResourceSprite->GetGPUVirtualAddress();
 	indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
@@ -373,11 +373,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexDataSprite[2] = 2;
 	indexDataSprite[3] = 1;
 	indexDataSprite[4] = 3;
-	indexDataSprite[5] = 2;
+	indexDataSprite[5] = 2;*/
 #pragma endregion
 	//スフィア用リソース
 #pragma region
-	const uint32_t Subdivision = 16;
+	/*const uint32_t Subdivision = 16;
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSphere = dxCommon->CreateBufferResource( sizeof(Sprite::VertexData) * Subdivision * Subdivision * 6);
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResourceSphere = dxCommon->CreateBufferResource( sizeof(Matrix4x4));
 	Matrix4x4* wvpDataSphere = nullptr;
@@ -396,7 +396,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSphere = dxCommon->CreateBufferResource( sizeof(Sprite::TransformationMatrix));
 	Sprite::TransformationMatrix* transformationMatrixDataSphere = nullptr;
 	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSphere));
-	transformationMatrixDataSphere->World = MakeIdentity4x4();
+	transformationMatrixDataSphere->World = MakeIdentity4x4();*/
 
 	//平行光源
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource( sizeof(DirectiomalLight));
@@ -407,7 +407,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->intensity = 1.0f;
 
 	//スフィア用Transform
-	struct Sprite::Transform transformSphere { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,5.0f } };
+	/*struct Sprite::Transform transformSphere { { 1.0f, 1.0f, 1.0f }, {0.0f,0.0f,0.0f}, {0.0f,0.0f,5.0f} };
 
 	//スフィア用インデックス
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSphere = dxCommon->CreateBufferResource( sizeof(uint32_t) * 6);
@@ -423,7 +423,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexDataSphere[2] = 2;
 	indexDataSphere[3] = 1;
 	indexDataSphere[4] = 3;
-	indexDataSphere[5] = 2;
+	indexDataSphere[5] = 2;*/
 #pragma endregion
 	//デバッグ画面初期化
 #pragma region
@@ -497,13 +497,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			wvpData->World = worldMatrix;
 
 			//球の３次元化 WVPスフィア用
-			transformSphere.rotate.y += 0.03f;
+			/*transformSphere.rotate.y += 0.03f;
 			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
 			Matrix4x4 viewMatrixSphere = Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
-			transformationMatrixDataSphere->World = worldMatrixSphere;
+			transformationMatrixDataSphere->World = worldMatrixSphere;*/
+			
 			ImGui::Render();
 
 			/*dxCommon->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
@@ -513,31 +514,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			dxCommon->PreDraw();
 
-			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-
 			spriteCommon->SettingCommonDraw();
 
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			
-			dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU3 : texturSrvHandleGPU3);
-			
-			dxCommon->GetCommandList()->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
-
-			dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
-			
-			for (Sprite* sprite : sprites) {
-				sprite->Draw();
-			}
-
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
-			
 			//三角形描画
-			/*dxCommon->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
-			dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
+			// phicsRootSignature(rootSignature.Get());
+			//dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
 			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 			dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -549,32 +530,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			dxCommon->GetCommandList()->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
 
 			//スフィア描画
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+			/*dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 			dxCommon->GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
 			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
 			//dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
-			//dxCommon->GetCommandList()->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
+			//dxCommon->GetCommandList()->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);*/
 
 			//スプライト描画
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-			dxCommon->GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			//dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
-			//dxCommon->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);*/
-
+			for (Sprite* sprite : sprites) {
+				sprite->Draw();
+			}
 			
-			
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();
 #pragma endregion
 		}
 	}
 	//解放
-	delete spriteCommon;
 	for (Sprite* sprite : sprites) {
 		delete sprite;
 	}
+	delete spriteCommon;
 	delete input;
 	delete dxCommon;
 	ImGui_ImplDX12_Shutdown();
@@ -588,4 +565,4 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete winApp;
 
 	return 0;
-}
+};
