@@ -83,6 +83,10 @@ struct TransformationMatrix
 	Matrix4x4 WVP;
 	Matrix4x4 World;
 };
+struct AABB {
+	Vector3 max;
+	Vector3 min;
+};
 struct ParticleForGPU {
 	Matrix4x4 WVP;
 	Matrix4x4 World;
@@ -106,6 +110,12 @@ struct Emitter {
 	float frequency;  //発生頻度
 	float frequencyTime;  //頻度用タイマー
 };
+struct AcceleraationField
+{
+	Vector3 acceleration;
+	AABB area;
+};
+
 //球
 struct Sphere {
 	Vector3 center;
@@ -728,6 +738,22 @@ std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine) {
 		particles.push_back(MakeNewPaticle(randomEngine,emitter.transform.translate));
 	}
 	return particles;
+}
+//フィールド
+bool IsCollision(const AABB& aabb, const Vector3& point) {
+	if (point.x < aabb.min.x || point.x > aabb.max.x) {
+		return false;
+	}
+	
+	if (point.y < aabb.min.y || point.y > aabb.max.y) {
+		return false;
+	}
+
+	if (point.z < aabb.min.z || point.z > aabb.max.z) {
+		return false;
+	}
+
+	return true;
 }
 //リソースのデータ転送
 [[nodiscard]]
@@ -1375,6 +1401,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::mt19937 randomEngine(seedGenerator());
 	std::list<Particle> particles;
 #pragma endregion
+	//フィールド
+#pragma region
+	AcceleraationField accelerationField;
+	accelerationField.acceleration = { 15.0f,0.0f,0.0f };
+	accelerationField.area.min = { -1.0f,-1.0f,-1.0f };
+	accelerationField.area.max = { 1.0f,1.0f,1.0f };
+#pragma endregion
 	//スフィア用リソース
 #pragma region
 	const uint32_t Subdivision = 16;
@@ -1595,6 +1628,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					instancingData[numInstance].WVP = worldViewProjectionMatrix;
 					instancingData[numInstance].World = worldmatrix;
 					instancingData[numInstance].color = (*particleIterator).color;
+					if (IsCollision(accelerationField.area, (*particleIterator).transform.translate)) {
+						(*particleIterator).velocity.x += accelerationField.acceleration.x * kDeltaTime;
+						(*particleIterator).velocity.y += accelerationField.acceleration.y * kDeltaTime;
+						(*particleIterator).velocity.z += accelerationField.acceleration.z * kDeltaTime;
+					}
+
 					(*particleIterator).transform.translate.x += (*particleIterator).velocity.x * kDeltaTime;
 					(*particleIterator).transform.translate.y += (*particleIterator).velocity.y * kDeltaTime;
 					(*particleIterator).transform.translate.z += (*particleIterator).velocity.z * kDeltaTime;
