@@ -3,10 +3,11 @@
 #include <wrl.h>
 #include <chrono>
 #include "MyMath.h"
-
+#include "TextureManager.h"
 using namespace MyMath;
 
 class SpriteCommon;
+class TextureManager;
 
 class Sprite {
 public:
@@ -33,7 +34,7 @@ public:
 		Vector3 rotate;
 		Vector3 translate;
 	};
-	void Initialize(SpriteCommon* spriteCommon);
+	void Initialize(SpriteCommon* spriteCommon, std::string textureFilePath);
 
 	void Update();
 
@@ -71,4 +72,7 @@ private:
 	Vector2 position = { 0.0f,0.0f };
 	float rotation = 0.0f;
 	Vector2 size = { 120.0f,120.0f };
+
+	// テクスチャ番号
+	uint32_t textureIndex = 0;
 };

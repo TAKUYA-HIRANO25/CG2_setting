@@ -12,6 +12,7 @@
 #include "Sprite.h"
 #include "SpriteCommon.h"
 #include "D3DResourceLeakChecker.h"
+#include "TextureManager.h"
 
 #pragma comment(lib,"dxcompiler.lib")
 
@@ -236,17 +237,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	input = new Input();
 	input->Initialize(winApp);
 #pragma endregion
+	//テクスチャー
+#pragma region
+	TextureManager::GetInstance()->Initialize(dxCommon);
+	// Textureを読んで転送する
+	TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
+	TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
+
+#pragma endregion
 	//スプライト
 #pragma region
 	SpriteCommon* spriteCommon;
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
+
 	std::vector<Sprite*> sprites;
 	for (uint32_t i = 0; i < 5; ++i) {
 		Sprite* sprite = new Sprite();
-		sprite->Initialize(spriteCommon);
-		Vector2 newPosition = { float(i * 180.0f), 0.0f};
+		std::string filePath;
+		if (i % 2 == 0) {
+			filePath = "resources/uvChecker.png";
+		}
+		else {
+			filePath = "resources/monsterBall.png";
+		}
+		sprite->Initialize(spriteCommon, filePath);
+
+		Vector2 newPosition = { float(i * 180), 0 };
 		sprite->SetPosition(newPosition);
+
 		sprites.push_back(sprite);
 	}
 #pragma endregion
@@ -556,12 +575,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			// phicsRootSignature(rootSignature.Get());
 			//dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
 			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-			dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			//三角形の色変更
 			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
+			//dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
 			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			dxCommon->GetCommandList()->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
 
@@ -590,6 +609,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 	delete input;
 	delete dxCommon;
+	TextureManager::GetInstance()->Finalize();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
