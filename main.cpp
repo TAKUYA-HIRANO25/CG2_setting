@@ -293,6 +293,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU3 = dxCommon->GetSRVGPUDescriptorHandle(3);
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource3.Get(), &srvDesc3, texturSrvHandleCPU3);
 
+	/*
 	//読み込み2
 	DirectX::ScratchImage mipImages2 = dxCommon->LoadTexture("resources/monsterBall.png");
 	const DirectX::TexMetadata& metadata2 = mipImages2.GetMetadata();
@@ -328,6 +329,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_CPU_DESCRIPTOR_HANDLE texturSrvHandleCPU = dxCommon->GetSRVCPUDescriptorHandle(1);
 	D3D12_GPU_DESCRIPTOR_HANDLE texturSrvHandleGPU = dxCommon->GetSRVGPUDescriptorHandle(1);
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, texturSrvHandleCPU);
+	*/
+
 #pragma endregion
 #pragma region
 	Sprite::TransformationMatrix* wvpData = nullptr;
