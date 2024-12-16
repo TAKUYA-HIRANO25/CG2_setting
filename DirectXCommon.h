@@ -173,4 +173,6 @@ private:
 	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler;
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler;
 
+	//中間
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;
 };

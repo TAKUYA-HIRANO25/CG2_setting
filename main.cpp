@@ -574,18 +574,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			spriteCommon->SettingCommonDraw();
 
-			//三角形描画
-			// phicsRootSignature(rootSignature.Get());
-			//dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
-			dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-			//dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			////三角形描画
+			//// phicsRootSignature(rootSignature.Get());
+			////dxCommon->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
+			//dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+			////dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			//三角形の色変更
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			//dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
-			dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-			dxCommon->GetCommandList()->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
+			////三角形の色変更
+			//dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+			//dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+			////dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU3);
+			//dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+			//dxCommon->GetCommandList()->DrawInstanced(UINT(modeData.vertices.size()), 1, 0, 0);
 
 			//スフィア描画
 			/*dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
@@ -599,6 +599,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			for (Sprite* sprite : sprites) {
 				sprite->Draw();
 			}
+			//sprites[0]->Draw();
 			
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();
