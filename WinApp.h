@@ -1,8 +1,14 @@
 #pragma once
 #include "Windows.h"
+#define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <wrl.h>
 #include <cstdint>
+
+#pragma comment(lib,"dinput8.lib")
+#pragma comment(lib,"dxguid.lib")
+#include "externals/DirectXTex/DirectXTex.h"
+#include "externals/DirectXTex/d3dx12.h"
 
 class WinApp {
 public:
