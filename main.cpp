@@ -13,6 +13,8 @@
 #include "SpriteCommon.h"
 #include "D3DResourceLeakChecker.h"
 #include "TextureManager.h"
+#include "Object3dCommon.h"
+#include "Object3d.h"
 
 #pragma comment(lib,"dxcompiler.lib")
 
@@ -251,27 +253,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	//std::vector<Sprite*> sprites;
-	/*for (uint32_t i = 0; i < 5; ++i) {
-		Sprite* sprite = new Sprite();
-		std::string filePath;
-		if (i % 2 == 0) {
-			filePath = "resources/uvChecker.png";
-		}
-		else {
-			filePath = "resources/monsterBall.png";
-		}
-		sprite->Initialize(spriteCommon, filePath);
-
-		Vector2 newPosition = { float(i * 180), 0 };
-		sprite->SetPosition(newPosition);
-
-		sprites.push_back(sprite);
-	}*/
-
 	Sprite* sprite = new Sprite();
 	sprite->Initialize(spriteCommon, "resources/uvChecker.png");
 
+#pragma endregion
+	//モデル
+#pragma region
+	ObJect3dCommon* object3dCommon = nullptr;
+	object3dCommon = new ObJect3dCommon;
+	object3dCommon->Initialize(dxCommon);
+
+	Object3d* object3d = new Object3d;
+	object3d->Initialize();
 #pragma endregion
 	//頂点リソース作成
 #pragma region
@@ -534,6 +527,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				sprite->Update();
 			}*/
 			sprite->Update();
+
+			object3dCommon->SettingCommonDraw();
+
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -618,6 +614,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 	delete input;
 	delete dxCommon;
+	delete object3d;
+	delete object3dCommon;
 	TextureManager::GetInstance()->Finalize();
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
