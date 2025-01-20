@@ -4,6 +4,7 @@ struct Material
     float4 color;
     int enableLighting;
     float4x4 uvTransform;
+    float shininess; 
 };
 struct DirectiomalLight
 {
@@ -11,9 +12,14 @@ struct DirectiomalLight
     float3 direction;
     float intensity;
 };
+struct Camera
+{
+    float3 worldPosition;
+};
 ConstantBuffer<Material> gMaterial : register(b0);
 Texture2D<float4> gTexture : register(t0);
 SamplerState gsampler : register(s0);
+ConstantBuffer<Camera> gCamera : register(b2);
 ConstantBuffer<DirectiomalLight> gDirectiomalLight : register(b1);
 struct PixelshaderOutput
 {
@@ -25,7 +31,7 @@ PixelshaderOutput main(VertexShaderOutput input)
     float4 transformedUV = mul(float4(input.texcoord,0.0f, 1.0f), gMaterial.uvTransform);
     float4 textureColor = gTexture.Sample(gsampler, transformedUV.xy);
     PixelshaderOutput output;
-    
+    float3x2 toEye = normalize(gCamera.worldPosition - input.worldPosition);
     if (textureColor.a <= 0.5)
     {
         discard;

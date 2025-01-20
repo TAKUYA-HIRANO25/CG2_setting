@@ -116,6 +116,10 @@ struct AcceleraationField
 	AABB area;
 };
 
+struct CameraForGPU {
+	Vector3 worldPosition;
+};
+
 //球
 struct Sphere {
 	Vector3 center;
