@@ -10,10 +10,10 @@ void ObJect3dCommon::Initialize(DirectXCommon* dxCommon)
 void ObJect3dCommon::SettingCommonDraw()
 {
 	// RotSignatureを設定。PSOに設定しているけどベット設定が必要
-	dxCommon_->GetCommandlist()->SetGraphicsRootSignature(rootSignature.Get());
-	dxCommon_->GetCommandlist()->SetPipelineState(graphicsPipelineState.Get());
+	dxCommon_->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
+	dxCommon_->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
 	// 形状を設定
-	dxCommon_->GetCommandlist()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void ObJect3dCommon::createRootSignature()
