@@ -1095,33 +1095,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	D3D12_ROOT_SIGNATURE_DESC desriptionRootSignature{};
 	desriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[0].Descriptor.ShaderRegister = 0;
+	D3D12_ROOT_PARAMETER rootParameter[5] = {};
+	rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameter[0].Descriptor.ShaderRegister = 0;
+	rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameter[1].Descriptor.ShaderRegister = 0;
 
-    //rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	//rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-	//rootParameters[1].Descriptor.ShaderRegister = 0;
+	rootParameter[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameter[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameter[3].Descriptor.ShaderRegister = 1;
 
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriputorRange;
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriputorRange);
+	rootParameter[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameter[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameter[4].Descriptor.ShaderRegister = 2;
 
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[3].Descriptor.ShaderRegister = 1;
-
-	//パーティクル
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-	rootParameters[1].DescriptorTable.pDescriptorRanges = descriputorRange;
-	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriputorRange);
-
-
-	desriptionRootSignature.pParameters = rootParameters;
-	desriptionRootSignature.NumParameters = _countof(rootParameters);
 
 	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
@@ -1194,13 +1183,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = CompileShader(L"resources/Particle/Particle.VS.hlsl", L"vs_6_0", dxcUtils,
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = CompileShader(L"resources/shaders/Object3d.VS.hlsl", L"vs_6_0", dxcUtils,
 		dxcCompiler, includeHandler);
 	assert(vertexShaderBlob != nullptr);
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlod = CompileShader(L"resources/Particle/Particle.PS.hlsl", L"ps_6_0", dxcUtils,
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlod = CompileShader(L"resources/shaders/Object3d.PS.hlsl", L"ps_6_0", dxcUtils,
 		dxcCompiler, includeHandler);
 	assert(pixelShaderBlod != nullptr);
 
+	// カメラのリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = CreatBufferResource(device, sizeof(CameraForGPU));
+	CameraForGPU* cameraData = nullptr;
+	cameraResource->Map(0, nullptr, reinterpret_cast<void**>(&cameraData));
 #pragma endregion
 	//頂点リソース作成
 #pragma region
@@ -1393,28 +1386,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptoHeap, desriptorSizeSRV, 3);
 	device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc, instancingSrvHandleCPU);
 #pragma endregion
-	//パーティクル
-#pragma region
-	//エミッター
-	Emitter emitter{};
-	emitter.count = 3;
-	emitter.frequency = 0.5f;
-	emitter.frequencyTime = 0.0f;
-	emitter.transform.translate = { 0.0f,0.0f,0.0f };
-	emitter.transform.rotate = { 0.0f,0.0f,0.0f };
-	emitter.transform.scale = { 1.0f,1.0f,1.0f };
-	//乱数
-	std::random_device seedGenerator;
-	std::mt19937 randomEngine(seedGenerator());
-	std::list<Particle> particles;
-#pragma endregion
-	//フィールド
-#pragma region
-	AcceleraationField accelerationField;
-	accelerationField.acceleration = { 15.0f,0.0f,0.0f };
-	accelerationField.area.min = { -1.0f,-1.0f,-1.0f };
-	accelerationField.area.max = { 1.0f,1.0f,1.0f };
-#pragma endregion
+
 	//スフィア用リソース
 #pragma region
 	const uint32_t Subdivision = 16;
@@ -1508,6 +1480,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.right = kClientWidth;
 	scissorRect.top = 0;
 	scissorRect.bottom = kClientHeight;
+
+	TransformS cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
+	cameraData->worldPosition = cameraTransform.translate;
+
 #pragma endregion
 	//デバッグ画面初期化
 #pragma region
@@ -1556,7 +1532,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}*/
 			//ImGui::DragFloat4("materialData", materialDataVector);
 			//ImGui::DragFloat3("Scale", TransformScale);
-			ImGui::DragFloat3("EmitterTranslate", &emitter.transform.translate.x, 0.01f, -100.0f, 100.0f);
 			//ImGui::DragFloat3("Rotae", TransformRotae,0.1f);
 			//ImGui::DragFloat3("Translate", TransformTranslate);
 			//ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
@@ -1692,14 +1667,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootDescriptorTable(2, texturSrvHandleGPU);
 			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			//commandList->DrawInstanced(UINT(modeData.vertices.size()), numInstance, 0, 0);
-			
+			//カメラ　
+			commandList->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
+
 			//スフィア描画
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 			commandList->IASetIndexBuffer(&indexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSphere->GetGPUVirtualAddress());
-			//commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
-			//commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
+		    commandList->SetGraphicsRootDescriptorTable(2, useMonsterball ? texturSrvHandleGPU2 : texturSrvHandleGPU);
+			commandList->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);
 
 			//スプライト描画
 			//commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
