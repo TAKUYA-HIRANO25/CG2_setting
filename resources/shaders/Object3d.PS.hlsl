@@ -31,7 +31,7 @@ PixelshaderOutput main(VertexShaderOutput input)
     float4 transformedUV = mul(float4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
     float4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
     PixelshaderOutput output;
-    float3x2 toEye = normalize(gCamera.worldPosition - input.worldPosition);
+    float3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
     if (textureColor.a <= 0.5)
     {
         discard;
