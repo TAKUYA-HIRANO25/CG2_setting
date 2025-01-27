@@ -1397,14 +1397,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::NewFrame();
 			//			ImGui::ShowDemoWindow();
 			ImGui::Checkbox("useMonsterBall", &useMonsterball);
-			ImGui::DragFloat4("materialData", materialDataVector);
-			ImGui::DragFloat3("Scale", TransformScale);
-			ImGui::DragFloat3("Rotae", TransformRotae);
-			ImGui::DragFloat3("Translate", TransformTranslate);
+			//ImGui::DragFloat4("materialData", materialDataVector);
+			//ImGui::DragFloat3("Scale", TransformScale);
+			//ImGui::DragFloat3("Rotae", TransformRotae);
+			//ImGui::DragFloat3("Translate", TransformTranslate);
 			ImGui::DragFloat3("directionalLight", directionalLight, 0.1f);
-			ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
-			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+			//ImGui::DragFloat2("UVTransform", &uvTransformSprite.transform.x, 0.01f, -10.0f, 10.0f);
+			//ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			//ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
