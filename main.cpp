@@ -949,10 +949,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 	//解放
 	delete input;
+	dxCommon->Finalize();
 	delete dxCommon;
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
 
 #ifndef _DEBUG
 	

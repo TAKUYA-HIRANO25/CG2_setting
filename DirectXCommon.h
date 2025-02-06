@@ -63,6 +63,8 @@ public:
 
 	void PostDrow();
 
+	void Finalize();
+
 private:
 	/// デバイスの初期化
 	void DeviceInitialize();

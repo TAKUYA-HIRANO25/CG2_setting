@@ -235,6 +235,13 @@ void DirectXCommon::PostDrow()
 	assert(SUCCEEDED(hr));
 }
 
+void DirectXCommon::Finalize()
+{
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+}
+
 void DirectXCommon::DeviceInitialize()
 {
 #ifdef _DEBUG
