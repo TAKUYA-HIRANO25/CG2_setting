@@ -240,6 +240,9 @@ void DirectXCommon::Finalize()
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+	if (fenceEvent) {
+		CloseHandle(fenceEvent);
+	}
 }
 
 void DirectXCommon::DeviceInitialize()
