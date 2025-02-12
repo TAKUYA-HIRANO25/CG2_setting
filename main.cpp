@@ -251,8 +251,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon, "resources/uvChecker.png");
+	std::vector<Sprite*> sprites;
+	for (uint32_t i = 0; i < 5; ++i) {
+		Sprite* sprite = new Sprite();
+		std::string filePath;
+		if (i % 2 == 0) {
+			filePath = "resources/uvChecker.png";
+		}
+		else {
+			filePath = "resources/monsterBall.png";
+		}
+		sprite->Initialize(spriteCommon, filePath);
+
+		Vector2 newPosition = { float(i * 180), 0 };
+		sprite->SetPosition(newPosition);
+
+		sprites.push_back(sprite);
+	}
 
 #pragma endregion
 	//頂点リソース作成
@@ -512,10 +527,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				OutputDebugStringA("HIT0\n");
 			}
 
-			/*for (Sprite* sprite : sprites) {
+			for (Sprite* sprite : sprites) {
 				sprite->Update();
-			}*/
-			sprite->Update();
+			}
+			
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -582,10 +597,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//dxCommon->GetCommandList()->DrawInstanced(Subdivision * Subdivision * 6, 1, 0, 0);*/
 
 			//スプライト描画
-			/*for (Sprite* sprite : sprites) {
+			for (Sprite* sprite : sprites) {
 				sprite->Draw();
-			}*/
-			sprite->Draw();
+			}
+			
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();
@@ -593,10 +608,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 	}
 	//解放
-	/*for (Sprite* sprite : sprites) {
+	for (Sprite* sprite : sprites) {
 		delete sprite;
-	}*/
-	delete sprite;
+	}
+
 	delete spriteCommon;
 	delete input;
 	delete dxCommon;
