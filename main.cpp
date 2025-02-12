@@ -251,24 +251,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
 
-	//std::vector<Sprite*> sprites;
-	/*for (uint32_t i = 0; i < 5; ++i) {
-		Sprite* sprite = new Sprite();
-		std::string filePath;
-		if (i % 2 == 0) {
-			filePath = "resources/uvChecker.png";
-		}
-		else {
-			filePath = "resources/monsterBall.png";
-		}
-		sprite->Initialize(spriteCommon, filePath);
-
-		Vector2 newPosition = { float(i * 180), 0 };
-		sprite->SetPosition(newPosition);
-
-		sprites.push_back(sprite);
-	}*/
-
 	Sprite* sprite = new Sprite();
 	sprite->Initialize(spriteCommon, "resources/uvChecker.png");
 
