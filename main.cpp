@@ -241,7 +241,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	TextureManager::GetInstance()->Initialize(dxCommon);
 	// Textureを読んで転送する
-	//TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
+	TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
 	TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
 
 #pragma endregion
@@ -268,7 +268,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		sprites.push_back(sprite);
 	}
-
 #pragma endregion
 	//頂点リソース作成
 #pragma region
@@ -335,8 +334,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 #pragma region
 	Sprite::TransformationMatrix* wvpData = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = dxCommon->CreateBufferResource( sizeof(Sprite::VertexData) * modeData.vertices.size());
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource( sizeof(Sprite::TransformationMatrix));
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = dxCommon->CreateBufferResource(sizeof(Sprite::VertexData) * modeData.vertices.size());
+	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxCommon->CreateBufferResource(sizeof(Sprite::TransformationMatrix));
 	//Sprite::TransformationMatrix* wvpData = nullptr;
 	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 	wvpData->WVP = MakeIdentity4x4();
@@ -357,7 +356,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::memcpy(vertexData, modeData.vertices.data(), sizeof(Sprite::VertexData) * modeData.vertices.size());
 
 	//マテリアルリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = dxCommon->CreateBufferResource( sizeof(Sprite::Material));
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = dxCommon->CreateBufferResource(sizeof(Sprite::Material));
 	Sprite::Material* materialData = nullptr;
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -394,7 +393,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//Transform
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSprite = dxCommon->CreateBufferResource( sizeof(Sprite::TransformationMatrix));
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSprite = dxCommon->CreateBufferResource(sizeof(Sprite::TransformationMatrix));
 	Matrix4x4* transformationMatrixDataSprite = nullptr;
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	*transformationMatrixDataSprite = MakeIdentity4x4();
@@ -402,7 +401,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	struct Sprite::Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
 
 	//マテリアルリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource( sizeof(Sprite::Material));
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource(sizeof(Sprite::Material));
 	Sprite::Material* materialDataSprite = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -415,7 +414,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
 	Matrix4x4 worldViewProjectionMatrixSorite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 	*transformationMatrixDataSprite = worldViewProjectionMatrixSorite;
-	
+
 #pragma endregion
 	//インデックス
 #pragma region
@@ -458,7 +457,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	transformationMatrixDataSphere->World = MakeIdentity4x4();*/
 
 	//平行光源
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource( sizeof(DirectiomalLight));
+	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectiomalLight));
 	DirectiomalLight* directionalLightData = nullptr;
 	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -530,7 +529,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			for (Sprite* sprite : sprites) {
 				sprite->Update();
 			}
-			
+
 			//TransformRotae[1] += 0.01f;
 			transform.scale = { TransformScale[0],TransformScale[1],TransformScale[2] };
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -563,7 +562,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrixSphere;
 			transformationMatrixDataSphere->World = worldMatrixSphere;*/
-			
+
 			ImGui::Render();
 
 			/*dxCommon->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
@@ -600,7 +599,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			for (Sprite* sprite : sprites) {
 				sprite->Draw();
 			}
-			
+			//sprites[0]->Draw();
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();
@@ -611,7 +610,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	for (Sprite* sprite : sprites) {
 		delete sprite;
 	}
-
 	delete spriteCommon;
 	delete input;
 	delete dxCommon;
@@ -621,7 +619,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::DestroyContext();
 
 #ifndef _DEBUG
-	
+
 #endif _DEBUG
 	winApp->Finalize();
 	delete winApp;
