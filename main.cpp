@@ -12,10 +12,9 @@
 #include "Object3d.h"
 #include "ModelCommon.h"
 #include "Model.h"
+#include "ModelManager.h"
 
 #pragma comment(lib,"dxcompiler.lib")
-
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //球
 struct Sphere {
@@ -138,7 +137,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region
 	TextureManager::GetInstance()->Initialize(dxCommon);
 	// Textureを読んで転送する
-	//TextureManager::GetInstance()->LoadTexture("resources/monsterBall.png");
 	TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
 
 #pragma endregion
@@ -160,26 +158,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Model* model = nullptr;
 	model = new Model;
-	model->Initialize(modelCommon,"resources", "plane.obj");
+	model->Initialize(modelCommon, "resources", "plane.obj");
 
 	ObJect3dCommon* object3dCommon = nullptr;
 	object3dCommon = new ObJect3dCommon;
 	object3dCommon->Initialize(dxCommon);
 
-	/*Object3d* object3d = nullptr;
-	object3d = new Object3d;
-	object3d->Initialize(object3dCommon);*/
+	ModelManager::GetInstance()->Initialize(dxCommon);
 
-	std::vector<Object3d*> object3dList;
+	// .ojbファイルからモデルを読み込む
+	ModelManager::GetInstance()->LoadModel("plane.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
 
-	for (int i = 0; i < 2; ++i) { // 5つのオブジェクトを生成
-		Object3d* object3d = new Object3d;
-		object3d->Initialize(object3dCommon);
-		object3d->SetModel(model);
-		object3d->SetTranslate(Vector3(float(i * 3), 0.0f, 0.0f));
-		object3dList.push_back(object3d);
-	}
+	// 異なるモデルを持つオブジェクトを生成
+	Object3d* planeObject = new Object3d;
+	planeObject->Initialize(object3dCommon);
+	planeObject->SetModel("plane.obj");
+	planeObject->SetTranslate(Vector3(-2.0f, 0.0f, 0.0f));
 
+	Object3d* axisObject = new Object3d;
+	axisObject->Initialize(object3dCommon);
+	axisObject->SetModel("axis.obj");
+	axisObject->SetTranslate(Vector3(2.0f, 0.0f, 0.0f));
 #pragma endregion
 
 	//リソース用頂点リソース
@@ -335,19 +335,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			object3dCommon->SettingCommonDraw();
 
 			Vector3 currentRotate[2];
-			for (int i = 0; i < object3dList.size(); ++i) {
+			currentRotate[0] = planeObject->GetRotate();
+			currentRotate[1] = axisObject->GetRotate();
 
-				currentRotate[i] = object3dList[i]->GetRotate();
-				currentRotate[0].z += 0.05f;
-				currentRotate[1].y += 0.05f;
+			currentRotate[0].y += 0.05f;
+			currentRotate[1].y = 0.0f;
+			currentRotate[1].z += 0.05f;
 
-				object3dList[i]->SetRotate(currentRotate[i]);
-
-				// 更新処理
-				object3dList[i]->Updata();
-			}
-
-	
+			planeObject->SetRotate(currentRotate[0]);
+			planeObject->Updata();
+			axisObject->SetRotate(currentRotate[1]);
+			axisObject->Updata();
 
 			//uvTransform
 			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
@@ -389,9 +387,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}*/
 			sprite->Draw();
 
-			for (Object3d* object3d : object3dList) {
-				object3d->Draw();
-			}
+			planeObject->Draw();
+			axisObject->Draw();
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();
@@ -406,10 +403,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 	delete input;
 	delete dxCommon;
-	for (Object3d * object3d : object3dList) {
-		delete object3d;
-	}
-	object3dList.clear();
+	delete axisObject;
+	delete planeObject;
+	ModelManager::GetInstance()->Finalize();
 	delete object3dCommon;
 	delete model;
 	delete modelCommon;

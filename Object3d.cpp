@@ -3,6 +3,7 @@
 #include <cassert>
 #include "TextureManager.h"
 #include "Model.h"
+#include "ModelManager.h"
 
 void Object3d::Initialize(ObJect3dCommon* object3dCommon)
 {
@@ -52,4 +53,10 @@ void Object3d::Draw()
 	if (model) {
 		model->Draw();
 	}
+}
+
+void Object3d::SetModel(const std::string& filePath)
+{
+	// モデルを検索してセットする
+	model = ModelManager::GetInstance()->FindModel(filePath);
 }
