@@ -6,38 +6,16 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "MyMath.h"
+#include "Mymath.h"
 
 using namespace MyMath;
 
 class ObJect3dCommon;
-
-struct VertexData {
-	Vector4 position;
-	Vector2 texcoord;
-	Vector3 normal;
-};
-
-struct MaterialData {
-	std::string textureFilePath;
-	uint32_t textureIndex = 0;
-};
-
-struct ModelData {
-	std::vector<VertexData> vertices;
-	MaterialData material;
-};
+class Model;
 
 // 3Dオブジェクト
 class Object3d {
 public:
-
-	struct Material {
-		Vector4 color;
-		int32_t enableLighting;
-		float padding[3];
-		Matrix4x4 uvTransform;
-	};
 
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
@@ -63,29 +41,27 @@ public:
 
 	void Draw();
 
-	static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+	// setter
+	void SetModel(Model* model) { this->model = model; }
+	void SetScale(const Vector3& scale) { transform.scale = scale; }
+	void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
+	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
 
-	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+	const Vector3& GetScale()const { return transform.scale; }
+	const Vector3& GetRotate()const { return transform.rotate; }
+	const Vector3& GetTranslate()const { return transform.translate; }
 
 private:
 	ObJect3dCommon* object3dCommon = nullptr;
-
-	ModelData modelData;
+	Model* model = nullptr;
 
 	// バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource;
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource;
 	// バッファリソース内のデータをさすポインタ
-	VertexData* vertexData = nullptr;
-	Material* materialData = nullptr;
 	TransformationMatrix* transformationMatrixData = nullptr;
 	DirectionalLight* directionalLightData = nullptr;
-	// バッファリソースの使い道を補足するバッファビュー
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 
 	Transform transform;
 	Transform cameraTransform;
-
 };
