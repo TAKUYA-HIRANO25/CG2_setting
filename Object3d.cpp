@@ -3,10 +3,10 @@
 #include <cassert>
 #include "TextureManager.h"
 
-void Object3d::Initialize(Object3dCommon* object3dCommon)
+void Object3d::Initialize(ObJect3dCommon* object3dCommon)
 {
 	// 引数で受け取ってメンバ変数に記録する
-	this->object3dCommon_ = object3dCommon;
+	this->object3dCommon = object3dCommon;
 	// モデル読み込み
 	modelData = LoadObjFile("resources", "plane.obj");
 
@@ -74,17 +74,17 @@ void Object3d::Updata()
 void Object3d::Draw()
 {
 	// VertexBufferViewを設定
-	object3dCommon->GetDxCommon()->GetCommandlist()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	object3dCommon->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 	// マテリアルCBufferの場所を設定
-	object3dCommon->GetDxCommon()->GetCommandlist()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// 座標変換行列CBufferの場所を設定
-	object3dCommon->GetDxCommon()->GetCommandlist()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// SRVのDescriptorTarbleの先頭を設定
-	object3dCommon->GetDxCommon()->GetCommandlist()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureIndex));
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureIndex));
 	// 平行光源CBufferの場所を設定
-	object3dCommon->GetDxCommon()->GetCommandlist()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 	// 描画！（DrawCall/ドローコール)
-	object3dCommon->GetDxCommon()->GetCommandlist()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+	object3dCommon->GetDxCommon()->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 }
 
 MaterialData Object3d::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)

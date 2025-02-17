@@ -368,6 +368,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			object3dCommon->SettingCommonDraw();
 
+			object3d->Updata();
 			//TransformRotae[1] += 0.01f;
 			/*transform.scale = {TransformScale[0],TransformScale[1],TransformScale[2]};
 			transform.rotate = { TransformRotae[0],TransformRotae[1],TransformRotae[2] };
@@ -438,6 +439,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				sprite->Draw();
 			}*/
 			sprite->Draw();
+
+			object3d->Draw();
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 			dxCommon->PostDrow();

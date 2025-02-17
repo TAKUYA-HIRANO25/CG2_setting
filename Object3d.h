@@ -10,7 +10,7 @@
 
 using namespace MyMath;
 
-class Object3dCommon;
+class ObJect3dCommon;
 
 struct VertexData {
 	Vector4 position;
@@ -55,10 +55,9 @@ public:
 		Vector3 rotate;
 		Vector3 translate;
 	};
-
 public:
 	// 初期化
-	void Initialize(Object3dCommon* object3dCommon);
+	void Initialize(ObJect3dCommon* object3dCommon);
 
 	void Updata();
 
@@ -69,7 +68,7 @@ public:
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
 private:
-	Object3dCommon* object3dCommon_ = nullptr;
+	ObJect3dCommon* object3dCommon = nullptr;
 
 	ModelData modelData;
 
