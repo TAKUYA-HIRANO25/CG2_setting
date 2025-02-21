@@ -1,18 +1,18 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include "MyMath.h"
-#include "Input.h"
-#include "WinApp.h"
-#include "DirectXCommon.h"
-#include "Sprite.h"
-#include "SpriteCommon.h"
-#include "D3DResourceLeakChecker.h"
-#include "TextureManager.h"
-#include "Object3dCommon.h"
-#include "Object3d.h"
-#include "ModelCommon.h"
-#include "Model.h"
-#include "ModelManager.h"
+#include "Engine/Math/MyMath.h"
+#include "Engine/Base/Input.h"
+#include "Engine/Base/WinApp.h"
+#include "Engine/Base/DirectXCommon.h"
+#include "Engine/2D/Sprite.h"
+#include "Engine/2D/SpriteCommon.h"
+#include "Engine/Base/D3DResourceLeakChecker.h"
+#include "Engine/Base/TextureManager.h"
+#include "Engine/3D/Object3dCommon.h"
+#include "Engine/3D/Object3d.h"
+#include "Engine/3D/Model.h"
+#include "Engine/3D/ModelCommon.h"
+#include "Engine/3D/ModelManager.h"
 
 #pragma comment(lib,"dxcompiler.lib")
 
