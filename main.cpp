@@ -181,58 +181,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	axisObject->SetModel("axis.obj");
 	axisObject->SetTranslate(Vector3(2.0f, 0.0f, 0.0f));
 #pragma endregion
-
-	//リソース用頂点リソース
-#pragma region
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(Sprite::VertexData) * 4);
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
-	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
-	vertexBufferViewSprite.SizeInBytes = sizeof(Sprite::VertexData) * 4;
-	vertexBufferViewSprite.StrideInBytes = sizeof(Sprite::VertexData);
-	//頂点データ
-	Sprite::VertexData* vertexDataSprite = nullptr;
-	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-	vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };//左下
-	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
-	vertexDataSprite[0].normal = { 0.0f,0.0f,-1.0f };
-
-	vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };//左上
-	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
-	vertexDataSprite[1].normal = { 0.0f,0.0f,-1.0f };
-
-	vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };//右下
-	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
-	vertexDataSprite[2].normal = { 0.0f,0.0f,-1.0f };
-
-	vertexDataSprite[3].position = { 640.0f,0.0f,0.0f,1.0f };//右上
-	vertexDataSprite[3].texcoord = { 1.0f,0.0f };
-	vertexDataSprite[3].normal = { 0.0f,0.0f,-1.0f };
-
-
-	//Transform
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSprite = dxCommon->CreateBufferResource( sizeof(Sprite::TransformationMatrix));
-	Matrix4x4* transformationMatrixDataSprite = nullptr;
-	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
-	*transformationMatrixDataSprite = MakeIdentity4x4();
-	//CPU用Transform
-	struct Sprite::Transform transformSprite { { 1.0f, 1.0f, 1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f } };
-
-	//マテリアルリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource( sizeof(Sprite::Material));
-	Sprite::Material* materialDataSprite = nullptr;
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialDataSprite->enableLighting = 1;
-	materialDataSprite->uvTransform = MakeIdentity4x4();
-
-	//WVPスプライト用
-	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSorite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-	*transformationMatrixDataSprite = worldViewProjectionMatrixSorite;
-	
-#pragma endregion
 	
 	//スフィア用リソース
 #pragma region
@@ -351,7 +299,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 uvTransformMatrix = MakeScalematrix(uvTransformSprite.scale);
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
-			materialDataSprite->uvTransform = uvTransformMatrix;
 
 			
 

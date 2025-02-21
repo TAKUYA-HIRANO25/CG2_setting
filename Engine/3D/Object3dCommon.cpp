@@ -1,4 +1,4 @@
-#include "Object3dCommon.h"
+#include "Engine/3D/Object3dCommon.h"
 
 void ObJect3dCommon::Initialize(DirectXCommon* dxCommon)
 {
