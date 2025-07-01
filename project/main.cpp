@@ -125,7 +125,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	DirectXCommon* dxCommon = nullptr;
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
-
 #pragma endregion
 	//キー入力
 #pragma region
