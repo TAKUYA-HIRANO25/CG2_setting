@@ -1,0 +1,26 @@
+﻿  D3DResourceLeakChecker.cpp
+  DirectXCommon.cpp
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_dx12.cpp
+  imgui_impl_win32.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  Input.cpp
+  Logger.cpp
+  main.cpp
+  Model.cpp
+  ModelCommon.cpp
+  ModelManager.cpp
+  MyMath.cpp
+  Object3d.cpp
+  Object3dCommon.cpp
+  Sprite.cpp
+  SpriteCommon.cpp
+  StringUility.cpp
+  TextureManager.cpp
+  WinApp.cpp
+  CG2_setting.vcxproj -> C:\Users\K023G\source\repos\TAKUYA-HIRANO25\generated\output\Debug\CG2_setting.exe
+          1 file(s) copied.
+          1 file(s) copied.
