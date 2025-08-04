@@ -13,6 +13,7 @@
 #include "Engine/3D/Model.h"
 #include "Engine/3D/ModelCommon.h"
 #include "Engine/3D/ModelManager.h"
+#include "Engine/3D/Camera.h"
 
 #pragma comment(lib,"dxcompiler.lib")
 
@@ -180,7 +181,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	axisObject->SetModel("axis.obj");
 	axisObject->SetTranslate(Vector3(2.0f, 0.0f, 0.0f));
 #pragma endregion
-	
+	//カメラ
+#pragma region
+	Camera* camera = new Camera;
+	camera->SetRotate({ 0.0f,0.0f,-10.0f });
+	camera->SetTranslate({ 0.0f,0.0f,0.0f });
+	object3dCommon->SetDefaultCamera(camera);	
+#pragma endregion
 	//スフィア用リソース
 #pragma region
 	/*const uint32_t Subdivision = 16;
@@ -279,6 +286,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}*/
 			sprite->Update();
 
+			camera->Update();
 			object3dCommon->SettingCommonDraw();
 
 			Vector3 currentRotate[2];

@@ -102,7 +102,7 @@
     <ClCompile Include="Engine\Base\WinApp.cpp">
       <Filter>ソース ファイル\Base</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
+    <ClCompile Include="Engine\3D\Camera.cpp">
       <Filter>ソース ファイル\3D</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,7 +176,7 @@
     <ClInclude Include="Engine\Base\WinApp.h">
       <Filter>ソース ファイル\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
+    <ClInclude Include="Engine\3D\Camera.h">
       <Filter>ソース ファイル\3D</Filter>
     </ClInclude>
   </ItemGroup>
