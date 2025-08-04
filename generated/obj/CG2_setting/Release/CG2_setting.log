@@ -1,15 +1,8 @@
-﻿  Camera.cpp
-  main.cpp
-  Model.cpp
-  ModelManager.cpp
-  MyMath.cpp
-  Object3d.cpp
-  Object3dCommon.cpp
-  Sprite.cpp
+﻿  DirectXCommon.cpp
   コード生成しています。
-  26 of 3582 functions ( 0.7%) were compiled, the rest were copied from previous compilation.
-    8 functions were new in current compilation
-    26 functions had inline decision re-evaluated but remain unchanged
+  658 of 3981 functions (16.5%) were compiled, the rest were copied from previous compilation.
+    400 functions were new in current compilation
+    363 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
   CG2_setting.vcxproj -> C:\Users\K023G\source\repos\TAKUYA-HIRANO25\generated\output\Release\CG2_setting.exe
           1 file(s) copied.
