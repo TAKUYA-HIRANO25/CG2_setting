@@ -35,7 +35,7 @@ void Object3d::Initialize(ObJect3dCommon* object3dCommon)
 void Object3d::Updata()
 {
 	//transform.rotate.y += 0.05f;
-
+	 
 	// 3DのTransform処理
 	worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
