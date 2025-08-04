@@ -242,7 +242,6 @@ void DirectXCommon::PostDrow()
 
 void DirectXCommon::DeviceInitialize()
 {
-#ifdef _DEBUG
 
 	ComPtr<ID3D12Debug1> debugController = nullptr;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
@@ -306,9 +305,8 @@ void DirectXCommon::DeviceInitialize()
 	assert(device != nullptr);
 	Logger::Log("complete create D3D12Device!!!\n");
 #pragma endregion
-#endif
 
-#ifdef _DEBUG
+
 	ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
 	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
 		
@@ -331,7 +329,6 @@ void DirectXCommon::DeviceInitialize()
 	
 		infoQueue->PushStorageFilter(&filter);
 	}
-#endif
 }
 
 void DirectXCommon::CommandInitialize()
