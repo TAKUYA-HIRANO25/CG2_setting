@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include "Mymath.h"
-
+#include "Camera.h"
 using namespace MyMath;
 
 class ObJect3dCommon;
@@ -17,22 +17,6 @@ class Model;
 class Object3d {
 public:
 
-	struct TransformationMatrix {
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-	};
-
-	struct DirectionalLight {
-		Vector4 color;
-		Vector3 direction;
-		float intensity;
-	};
-
-	struct Transform {
-		Vector3 scale;
-		Vector3 rotate;
-		Vector3 translate;
-	};
 public:
 	// 初期化
 	void Initialize(ObJect3dCommon* object3dCommon);
@@ -46,7 +30,9 @@ public:
 	void SetScale(const Vector3& scale) { transform.scale = scale; }
 	void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
 	void SetTranslate(const Vector3& translate) { transform.translate = translate; }
+	void SetCamera(Camera* camera) { this->camera = camera; }
 
+	// Getter
 	const Vector3& GetScale()const { return transform.scale; }
 	const Vector3& GetRotate()const { return transform.rotate; }
 	const Vector3& GetTranslate()const { return transform.translate; }
@@ -64,4 +50,9 @@ private:
 
 	Transform transform;
 	Transform cameraTransform;
+
+	Camera* camera = nullptr;
+
+	Matrix4x4 worldMatrix;
+	Matrix4x4 worldViewProjectionMatrix;
 };

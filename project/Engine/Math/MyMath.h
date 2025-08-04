@@ -28,6 +28,23 @@ namespace MyMath {
 	{
 		float m[3][3];
 	};
+	struct TransformationMatrix {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+	};
+
+	struct DirectionalLight {
+		Vector4 color;
+		Vector3 direction;
+		float intensity;
+	};
+
+	struct Transform {
+		Vector3 scale;
+		Vector3 rotate;
+		Vector3 translate;
+	};
+
 	//単位行列
 	Matrix4x4 MakeIdentity4x4();
 	//積
@@ -43,7 +60,7 @@ namespace MyMath {
 	// Z軸
 	Matrix4x4 MakeRotateZMatrix(float radian);
 	//座標変換
-	Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
+	Vector3 TransformS(const Vector3& vector, const Matrix4x4& matrix);
 	//SRTの合成
 	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 	//透視投影
